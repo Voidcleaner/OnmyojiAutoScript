@@ -50,6 +50,7 @@ class GlobalGameAssets:
 	# '获得奖励' 四个大字 
 	I_UI_REWARD = RuleImage(roi_front=(530,126,211,66), roi_back=(464,69,352,303), threshold=0.73, method="Template matching", file="./tasks/GlobalGame/ui/ui_ui_reward.png")
 	# description 
+	I_UI_CLOSE_CELEBRATION = RuleImage(roi_front=(1153,76,34,34), roi_back=(1080,20,180,150), threshold=0.8, method="Template matching", file="./tasks/GlobalGame/ui/ui_close_celebration.png")
 	I_UI_BACK_RED = RuleImage(roi_front=(1041,111,34,38), roi_back=(877,15,383,254), threshold=0.8, method="Template matching", file="./tasks/GlobalGame/ui/ui_ui_back_red.png")
 	# description 
 	I_UI_BACK_YELLOW = RuleImage(roi_front=(26,17,47,46), roi_back=(0,0,100,100), threshold=0.8, method="Template matching", file="./tasks/GlobalGame/ui/ui_ui_back_yellow.png")

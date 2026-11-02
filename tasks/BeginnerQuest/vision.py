@@ -100,3 +100,9 @@ def movie_skip_action(rgb):
                     and abs((by+bh/2)-(y+h/2)) <= 5):
                 return Action('skip_movie',(900+x+w//2,y+h//2),.92)
     return None
+
+
+def prepare_is_enabled(image, point):
+    x,y=point
+    patch=image[max(0,y-32):min(720,y+32),max(0,x-32):min(1280,x+32)]
+    return patch.size > 0 and float(cv2.cvtColor(patch,cv2.COLOR_RGB2HSV)[:,:,2].mean()) >= 95

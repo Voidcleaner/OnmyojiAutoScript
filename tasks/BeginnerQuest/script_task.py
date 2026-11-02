@@ -8,7 +8,7 @@ import cv2
 from module.exception import RequestHumanTakeover, TaskEnd
 from module.logger import logger
 from module.ocr.models import get_ocr_model
-from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action, Action
+from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action, Action, prepare_is_enabled
 
 from tasks.BeginnerQuest.search import SceneSearch, click_point
 
@@ -21,6 +21,7 @@ class ScriptTask:
         self.options = config.beginner_quest.quest_options
         self.borrow_seen = False
         self.battle_pending = False
+        self.prepare_clicked = False
         self.skip_pending = False
         self.team_verified = False
         self.selected_role = None
@@ -69,21 +70,28 @@ class ScriptTask:
         blockers = ('体力不足', '购买体力', '充值', '再次挑战', '账号登录', '其他设备登录')
         if any((len(b.ocr_text) <= 16 and any(word in b.ocr_text for word in blockers)) or b.ocr_text == '失败' for b in boxes):
             raise RequestHumanTakeover('BeginnerQuest: resource, login or failed-battle prompt')
-        prepare_button = self.templates(image, {'prepare'})
+        prepare_button = (self.templates(image, {'prepare'}) or
+                          choose_text(boxes, ('准备',), (1080,480,1270,690), 'prepare'))
         if prepare_button:
             if self.borrow_seen and self.options.require_verified_team and not self.team_verified:
                 raise RequestHumanTakeover('BeginnerQuest: verify borrowed damage dealer and fire provider before battle')
             self.battle_pending = False
+            if not prepare_is_enabled(image, prepare_button.point):
+                return Action('wait_prepare', prepare_button.point)
             return prepare_button
-        if self.battle_pending and self.templates(image, {'search_scene'}):
+        if (self.battle_pending or self.prepare_clicked) and self.templates(image, {'search_scene'}):
             logger.info('BeginnerQuest: clear old battle state after return to story/courtyard')
             self.battle_pending = False
+            self.prepare_clicked = False
+        if self.prepare_clicked and not self.templates(image, {'search_scene'}):
+            self.battle_pending = True
         if self.battle_pending:
             result = (self.templates(image, {'reward'}) or choose_text(
                 boxes, ('点击屏幕继续', '点击任意位置继续', '领取奖励'),
                 (250, 350, 1250, 720), 'reward'))
             if result:
                 self.battle_pending = False
+                self.prepare_clicked = False
                 return result
             return Action('wait_battle', (0, 0))
         if (self.templates(image, {'intro_frame_top'})
@@ -162,6 +170,7 @@ class ScriptTask:
             state = json.loads(state_file.read_text())
             self.borrow_seen = bool(state.get('borrow_seen', False))
             self.battle_pending = bool(state.get('battle_pending', False))
+            self.prepare_clicked = bool(state.get('prepare_clicked', False))
         initial = self.device.screenshot()
         if (getattr(self.device, 'is_desktop', False)
                 and not self.device.find_desktop_login_popup() and self.scene_is_ready(initial)):
@@ -170,7 +179,7 @@ class ScriptTask:
         while count < self.options.max_actions and time.monotonic() - started < self.options.max_seconds:
             image = self.device.screenshot()
             action = self.decide(image)
-            state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': self.battle_pending}))
+            state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': self.battle_pending, 'prepare_clicked': self.prepare_clicked}))
             if not action:
                 if (self.options.search_npc and self.search_allowed
                         and time.monotonic() - last_action > 3):
@@ -192,7 +201,7 @@ class ScriptTask:
                     raise RequestHumanTakeover('BeginnerQuest: no recognized interaction; saved unrecognized.png')
                 time.sleep(1)
                 continue
-            if action.name == 'wait_battle':
+            if action.name in ('wait_battle', 'wait_prepare'):
                 last_action = time.monotonic()
                 self.device.stuck_record_clear()
                 time.sleep(2)
@@ -213,8 +222,8 @@ class ScriptTask:
                 break
             self.device.click(*click_point(action.point, self.options.click_jitter), control_check=False, control_name='BeginnerQuest_' + action.name)
             if action.name == 'prepare':
-                self.battle_pending = True
-                state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': True}))
+                self.prepare_clicked = True
+                state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': False, 'prepare_clicked': True}))
             self.device.stuck_record_clear()
             count += 1
             last_key, last_action = key, time.monotonic()

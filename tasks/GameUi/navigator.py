@@ -40,6 +40,7 @@ class GameUi(BaseTask, GameUiAssets):
 
     # 全局未知页关闭动作，所有任务共享。
     DEFAULT_UNKNOWN_CLOSERS = [
+        GlobalGameAssets.I_UI_CLOSE_CELEBRATION,
         GlobalGameAssets.I_UI_BACK_RED,
         GlobalGameAssets.I_CHAT_CLOSE_BUTTON,
         ActivityShikigamiAssets.I_SKIP_BUTTON,

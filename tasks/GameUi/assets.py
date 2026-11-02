@@ -108,6 +108,8 @@ class GameUiAssets:
 
 	# Image Rule Assets
 	# 庭院标志 
+	I_CHECK_BEGINNER_MAIN = RuleImage(roi_front=(1194,9,51,57), roi_back=(1180,0,90,90), threshold=0.86, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_main.png")
+	I_MAIN_GOTO_BEGINNER_EXPLORATION = RuleImage(roi_front=(729,246,32,47), roi_back=(240,100,950,300), threshold=0.75, method="Template matching", file="./tasks/GameUi/page/page_main_goto_beginner_exploration.png")
 	I_CHECK_MAIN = RuleImage(roi_front=(807,108,76,45), roi_back=(49,98,1033,74), threshold=0.95, method="Template matching", file="./tasks/GameUi/page/page_check_main.png")
 	# 庭院卷轴关闭标识 
 	I_MAIN_SCROLL_CLOSE = RuleImage(roi_front=(1181,634,28,39), roi_back=(1162,595,77,112), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_main_scroll_close.png")

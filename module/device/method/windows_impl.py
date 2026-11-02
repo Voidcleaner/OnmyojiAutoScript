@@ -263,7 +263,6 @@ class Window(Handle):
         """
         self.desktop_window_restore_if_minimized()
         hwnd = self.root_handle_num
-        self.move_desktop_window_message(x, y)
         lparam = MAKELONG(*self.desktop_message_coord(x, y))
         if self.config.script.device.screenshot_method == 'macos_window':
             # Wine's movie player reads GetCursorPos rather than lParam alone.
@@ -272,15 +271,26 @@ class Window(Handle):
             from win32gui import ClientToScreen, SendMessageTimeout
             from win32con import SMTO_ABORTIFHUNG
             previous = GetCursorPos()
+            pressed = False
             try:
                 SetCursorPos(ClientToScreen(hwnd, self.desktop_message_coord(x, y)))
                 SendMessageTimeout(hwnd, WM_MOUSEMOVE, 0, lparam, SMTO_ABORTIFHUNG, 1000)
                 SendMessageTimeout(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lparam, SMTO_ABORTIFHUNG, 1000)
-                time.sleep(press_time)
+                pressed = True
+                time.sleep(max(press_time, .12))
                 SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, lparam, SMTO_ABORTIFHUNG, 1000)
+                pressed = False
+                time.sleep(.12)  # Allow a background render/input tick before restoring.
             finally:
+                if pressed:
+                    try:
+                        SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, lparam, SMTO_ABORTIFHUNG, 1000)
+                    except Exception:
+                        pass
                 SetCursorPos(previous)
+            self._desktop_cursor = (int(x), int(y))
             return
+        self.move_desktop_window_message(x, y)
         PostMessage(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lparam)
         time.sleep(press_time)
         PostMessage(hwnd, WM_LBUTTONUP, 0, lparam)
@@ -418,6 +428,40 @@ class Window(Handle):
         hwnd = self.root_handle_num
         interval: int = 10
         trace = human_track(startPos, endPos, interval=interval)
+        if self.config.script.device.screenshot_method == 'macos_window':
+            from win32api import GetCursorPos, SetCursorPos
+            from win32gui import ClientToScreen, SendMessageTimeout
+            from win32con import SMTO_ABORTIFHUNG
+            previous = GetCursorPos()
+            pressed = False
+            def move(point, held=0):
+                coord = self.desktop_message_coord(*point)
+                SetCursorPos(ClientToScreen(hwnd, coord))
+                SendMessageTimeout(hwnd, WM_MOUSEMOVE, held, MAKELONG(*coord), SMTO_ABORTIFHUNG, 1000)
+            try:
+                move(startPos)
+                start = MAKELONG(*self.desktop_message_coord(*startPos))
+                SendMessageTimeout(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, start, SMTO_ABORTIFHUNG, 1000)
+                pressed = True
+                time.sleep(.15)
+                for point in trace[::max(1, len(trace)//20)]:
+                    move(point, MK_LBUTTON)
+                    time.sleep(.025)
+                move(endPos, MK_LBUTTON)
+                time.sleep(.15)
+                end = MAKELONG(*self.desktop_message_coord(*endPos))
+                SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, end, SMTO_ABORTIFHUNG, 1000)
+                pressed = False
+                time.sleep(.12)
+            finally:
+                if pressed:
+                    try:
+                        SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, MAKELONG(*self.desktop_message_coord(*endPos)), SMTO_ABORTIFHUNG, 1000)
+                    except Exception:
+                        pass
+                SetCursorPos(previous)
+            self._desktop_cursor = tuple(endPos)
+            return
         # 先移到起点再按下：客户端靠 hover 状态识别拖拽
         self.move_desktop_window_message(startPos[0], startPos[1])
         start_lparam = MAKELONG(*self.desktop_message_coord(startPos[0], startPos[1]))

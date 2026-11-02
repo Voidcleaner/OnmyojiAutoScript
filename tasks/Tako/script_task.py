@@ -7,6 +7,7 @@ from datetime import time, datetime, timedelta
 from module.logger import logger
 from module.exception import TaskEnd
 from module.base.timer import Timer
+from tasks.Component.GeneralRoom.teammate_gate import TeammateGate
 
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main, page_team, page_shikigami_records
@@ -57,18 +58,24 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul):
         # 进入到了房间里面
         wait_timer = Timer(60)
         wait_timer.start()
+        teammate_gate = TeammateGate()
         while 1:
             self.screenshot()
 
             if not self.is_in_room():
                 continue
-            if wait_timer.reached():
+            present = not self.appear(self.I_ADD_1)
+            if not present and wait_timer.reached():
+                self.progression_outcome = 'no_teammate'
                 logger.warning('Wait for too long, exit')
                 self.exit_room()
                 break
-            if not self.appear(self.I_ADD_1):
-                # 有人进来了，可以进行挑战
-                logger.info('There is someone in the room and start the challenge')
+            if teammate_gate.ready(present):
+                self.screenshot()
+                if not self.is_in_room() or self.appear(self.I_ADD_1):
+                    teammate_gate.ready(False)
+                    continue
+                logger.info('Teammate remained for 3-5 seconds; start as host')
                 self.click_fire()
                 self.run_general_battle()
                 break

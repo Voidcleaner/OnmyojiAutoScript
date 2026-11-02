@@ -6,6 +6,7 @@ from cached_property import cached_property
 from module.exception import TaskEnd
 from module.logger import logger
 from module.base.timer import Timer
+from tasks.Component.GeneralRoom.teammate_gate import TeammateGate
 
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main, page_team, page_shikigami_records
@@ -53,21 +54,23 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
             # 进入到了房间里面
             wait_timer = Timer(50)
             wait_timer.start()
+            teammate_gate = TeammateGate()
             while 1:
                 self.screenshot()
 
                 if not self.is_in_room():
                     continue
-                if wait_timer.reached():
-                    # 超过时间依然挑战
-                    logger.warning('Wait for too long and start the challenge')
-                    self.click_fire()
-                    count += 1
-                    self.run_general_battle()
-                    break
-                if not self.appear(self.I_ADD_5_1):
-                    # 有人进来了，可以进行挑战
-                    logger.info('There is someone in the room and start the challenge')
+                present = not self.appear(self.I_ADD_5_1)
+                if not present and wait_timer.reached():
+                    self.progression_outcome = 'no_teammate'
+                    logger.warning('No teammate joined; leave without starting solo')
+                    self.experience_exit(con, success=False)
+                if teammate_gate.ready(present):
+                    self.screenshot()
+                    if not self.is_in_room() or self.appear(self.I_ADD_5_1):
+                        teammate_gate.ready(False)
+                        continue
+                    logger.info('Teammate remained for 3-5 seconds; start as host')
                     self.click_fire()
                     count += 1
                     self.run_general_battle()
@@ -99,7 +102,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
                 self.ui_click_until_disappear(self.I_FALSE)
                 return False
 
-    def experience_exit(self, con):
+    def experience_exit(self, con, success=True):
         self.goto_page(page_main)
         if con.buff_exp_50_click or con.buff_exp_100_click:
             self.open_buff()
@@ -109,7 +112,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
                 self.exp_100(False)
             self.close_buff()
 
-        self.set_next_run(task='ExperienceYoukai', success=True, finish=False)
+        self.set_next_run(task='ExperienceYoukai', success=success, finish=False)
         raise TaskEnd('ExperienceYoukai')
 
 if __name__ == '__main__':

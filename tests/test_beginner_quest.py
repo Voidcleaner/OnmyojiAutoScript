@@ -73,6 +73,7 @@ class BeginnerQuestTests(unittest.TestCase):
             self.assertIsNone(self.task.decide(self.image))
 
     def test_visible_prepare_button_recovers_failed_prepare_click(self):
+        self.image.fill(200)
         from tasks.BeginnerQuest.vision import Action
         self.task.battle_pending = True
         with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates') as templates:
@@ -111,6 +112,19 @@ class BeginnerQuestTests(unittest.TestCase):
         with self.assertRaises(RequestHumanTakeover):
             self.decide([box('检测到账号在其他设备登录',640,325)])
 
+    def test_disabled_prepare_waits_then_enabled_button_clicks(self):
+        self.assertEqual(self.decide([box('准备',1177,589)]).name,'wait_prepare')
+        self.image.fill(200)
+        self.assertEqual(self.decide([box('准备',1177,589)]).name,'prepare')
+
+    def test_prepare_click_is_not_assumed_to_have_started_battle(self):
+        self.image.fill(200)
+        self.task.prepare_clicked=True
+        self.assertEqual(self.decide([box('准备',1177,589)]).name,'prepare')
+        self.assertFalse(self.task.battle_pending)
+        self.assertEqual(self.decide([]).name,'wait_battle')
+        self.assertTrue(self.task.battle_pending)
+
     def test_resource_prompt_stops(self):
         with self.assertRaises(RequestHumanTakeover):
             self.decide([box('体力不足')])
@@ -121,6 +135,7 @@ class BeginnerQuestTests(unittest.TestCase):
             self.decide([box('准备',1150,600)])
 
     def test_prepare_can_continue_verified_team(self):
+        self.image.fill(200)
         self.task.borrow_seen=True
         self.task.team_verified=True
         self.assertEqual(self.decide([box('准备',1150,600)]).name,'prepare')
