@@ -47,6 +47,12 @@ class BeginnerQuestTests(unittest.TestCase):
         cv2.circle(self.image,(400,250),26,(240,200,120),3)
         self.assertEqual(ellipsis_action(self.image).point,(400,250))
 
+    def test_roof_lights_do_not_form_a_circular_npc_marker(self):
+        cv2.rectangle(self.image,(370,237),(430,263),(160,160,160),-1)
+        for x in (388,400,412):
+            cv2.circle(self.image,(x,250),4,(240,240,240),-1)
+        self.assertIsNone(ellipsis_action(self.image))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 

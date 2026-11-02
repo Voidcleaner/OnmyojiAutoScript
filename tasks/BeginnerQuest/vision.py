@@ -73,7 +73,12 @@ def ellipsis_action(rgb, excluded_regions=()):
         patch = gray[cy-30:cy+31, cx-30:cx+31]
         yy, xx = np.ogrid[-30:31, -30:31]
         ring = ((xx*xx+yy*yy) >= 22**2) & ((xx*xx+yy*yy) <= 29**2)
-        if float(np.mean(patch[ring] > 145)) >= .20 and patch[30, 30] > 160:
+        # Roof lights and other horizontal dot rows are not circular markers.
+        angles=np.arctan2(yy,xx)
+        sectors=[ring & (angles>=a) & (angles<a+np.pi/4)
+                 for a in np.arange(-np.pi,np.pi,np.pi/4)]
+        coverage=sum(float(np.mean(patch[sector]>145))>=.15 for sector in sectors)
+        if coverage>=6 and float(np.mean(patch[ring] > 145)) >= .20 and patch[30, 30] > 160:
             return Action('talk', (cx, cy), .9)
     return None
 
