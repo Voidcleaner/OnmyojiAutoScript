@@ -102,3 +102,26 @@ class NoviceResourceTests(unittest.TestCase):
             result=LevelingRunner.run_to(task,10)
         self.assertEqual(result['status'],'low_stamina')
         run.assert_not_called()
+
+    def test_normal_selector_can_recover_from_merged_fullscreen_ocr(self):
+        from tasks.BeginnerQuest.exploration_hard import ExplorationNormalAdapter
+        from tasks.Exploration.script_task import ScriptTask as ExplorationTask
+        image=np.zeros((720,1280,3),np.uint8);image[231:260,20:180]=(200,40,40)
+        task=object.__new__(ExplorationNormalAdapter)
+        task.config=SimpleNamespace(exploration=SimpleNamespace(exploration_config=SimpleNamespace(exploration_level='第十章')))
+        task.device=SimpleNamespace(image=image,click=Mock());task.screenshot=Mock()
+        with patch.object(ExplorationTask,'open_expect_level'),patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'):
+            ocr.return_value.detect_and_ocr.side_effect=[[box('第十章',200,30)],[box('开普通',210,135)]]
+            task.open_expect_level()
+        self.assertEqual(task.device.click.call_args.args,(80,245))
+
+    def test_leveling_errors_persist_stopped_status(self):
+        import tempfile,json
+        from pathlib import Path
+        from tasks.BeginnerQuest.leveling import LevelingRunner
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8)),goto_page=Mock(),screenshot=Mock())
+        with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',return_value=29),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=638),patch('tasks.BeginnerQuest.leveling.run_existing',side_effect=ValueError('selector')):
+            with self.assertRaises(ValueError):LevelingRunner.run_to(task,10)
+            state=json.loads((Path(directory)/'log/beginner_quest/test/leveling.json').read_text())
+        self.assertEqual(state['status'],'stopped_error')
+        self.assertIn('selector',state['reason'])

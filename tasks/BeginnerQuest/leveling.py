@@ -39,5 +39,11 @@ class LevelingRunner(NoviceHub):
             print('LEVELING_STATE',json.dumps(state),flush=True)
             if status=='unverified_ui':raise RequestHumanTakeover('Player level/stamina not verified; do not keep spending')
             if status!='running':return state
-            run_existing(ModulePlan('Exploration',chapter),self.config,self.device,xp_only=True)
+            try:
+                run_existing(ModulePlan('Exploration',chapter),self.config,self.device,xp_only=True)
+            except Exception as exc:
+                state.update(status='stopped_error',reason=f'{type(exc).__name__}: {exc}')
+                (root/'leveling.json').write_text(json.dumps(state),encoding='utf-8')
+                cv2.imwrite(str(root/'leveling_error.png'),cv2.cvtColor(self.device.image,cv2.COLOR_RGB2BGR))
+                raise
         raise AssertionError('Bounded loop exhausted without reporting state')
