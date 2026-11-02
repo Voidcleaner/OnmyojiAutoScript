@@ -218,3 +218,21 @@ class NoviceResourceTests(unittest.TestCase):
         with patch('tasks.BeginnerQuest.leveling.get_ocr_model') as model:
             model.return_value.detect_and_ocr.return_value=[box('92/100',928,32),box('749',771,32)]
             self.assertEqual(read_stamina(np.zeros((720,1280,3),np.uint8)),92)
+
+    def test_closed_courtyard_scroll_reveals_hidden_stamina_once(self):
+        from tasks.BeginnerQuest.leveling import LevelingRunner
+        task=object.__new__(LevelingRunner)
+        task.device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8))
+        task.appear=Mock(return_value=True);task._tap=Mock();task.screenshot=Mock()
+        with patch('tasks.BeginnerQuest.leveling.read_stamina',side_effect=[None,91]):
+            self.assertEqual(task.read_visible_stamina(),91)
+        task._tap.assert_called_once_with((1205,650))
+
+    def test_missing_stamina_on_other_screen_does_not_guess_menu_click(self):
+        from tasks.BeginnerQuest.leveling import LevelingRunner
+        task=object.__new__(LevelingRunner)
+        task.device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8))
+        task.appear=Mock(return_value=False);task._tap=Mock()
+        with patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=None):
+            self.assertIsNone(task.read_visible_stamina())
+        task._tap.assert_not_called()

@@ -5,6 +5,7 @@ import re
 import time
 from pathlib import Path
 from module.exception import RequestHumanTakeover
+from module.atom.image import RuleImage
 from module.ocr.models import get_ocr_model
 from tasks.BeginnerQuest.novice_hub import NoviceHub
 from tasks.BeginnerQuest.planner import read_player_level,run_existing,ModulePlan
@@ -35,6 +36,18 @@ def read_experience_fraction(image):
 
 
 class LevelingRunner(NoviceHub):
+    CLOSED_SCROLL = RuleImage(roi_front=(1168,605,82,95), roi_back=(1140,580,140,140),
+                              threshold=.9, method="Template matching",
+                              file="./tasks/BeginnerQuest/templates/courtyard_scroll_closed.png")
+
+    def read_visible_stamina(self):
+        stamina=read_stamina(self.device.image)
+        if stamina is None and self.appear(self.CLOSED_SCROLL):
+            self._tap((1205,650))
+            self.screenshot()
+            stamina=read_stamina(self.device.image)
+        return stamina
+
     def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3,xp_only=True,difficulty="normal"):
         if difficulty not in ('normal','hard'):raise ValueError('Unsupported exploration difficulty')
         if not 1<=chapter<=28 or not 1<=target<=60:raise ValueError('Unsupported chapter/player-level target')
@@ -46,6 +59,8 @@ class LevelingRunner(NoviceHub):
             self.goto_page(page_main)
             self.screenshot()
             level=read_player_level(self.device.image);stamina=read_stamina(self.device.image)
+            if stamina is None and level is not None and level<target:
+                stamina=LevelingRunner.read_visible_stamina(self)
             experience=read_experience_fraction(self.device.image)
             gained_experience=(experience is not None and previous_experience is not None
                                and experience>previous_experience+.01)
