@@ -212,3 +212,9 @@ class NoviceResourceTests(unittest.TestCase):
         with patch('tasks.BeginnerQuest.leveling.get_ocr_model') as model:
             model.return_value.detect_and_ocr.return_value=[box('126+',965,32),box('739',784,33),box('26',965,600)]
             self.assertEqual(read_stamina(np.zeros((720,1280,3),np.uint8)),126)
+
+    def test_stamina_reads_current_amount_below_capacity(self):
+        from tasks.BeginnerQuest.leveling import read_stamina
+        with patch('tasks.BeginnerQuest.leveling.get_ocr_model') as model:
+            model.return_value.detect_and_ocr.return_value=[box('92/100',928,32),box('749',771,32)]
+            self.assertEqual(read_stamina(np.zeros((720,1280,3),np.uint8)),92)
