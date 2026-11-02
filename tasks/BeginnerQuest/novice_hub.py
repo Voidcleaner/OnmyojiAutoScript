@@ -62,6 +62,9 @@ class NoviceHub(GameUi):
             time.sleep(.7)
             return True
         words=[b.ocr_text.replace(' ','') for b in boxes]
+        if '获得插画' in words:
+            self._tap((1170,450))
+            return True
         if '获得奖励' in words:
             self._tap((1100,600))
             return True
@@ -127,3 +130,28 @@ class NoviceHub(GameUi):
             observation.unsupported=list(dict.fromkeys(observation.unsupported+extra.unsupported))
         self.goto_page(page_main)
         return player_level,observation
+
+    def open_story_objective(self, chapter):
+        """Enter only the matching live task row, never a guide coordinate."""
+        self.goto_page(page_main)
+        for _ in range(3):
+            boxes=self._tap((300,356))
+            if any('初入平安京' in b.ocr_text for b in boxes):break
+        else:raise RequestHumanTakeover('Cannot open novice hub for story entry')
+        self._tap((100,180))
+        self._tap((1230,180))
+        for attempt in range(3):
+            boxes=self._clear_completion()
+            for button in boxes:
+                x,y=button.box.mean(axis=0)
+                if button.ocr_text.strip()!='前往' or not (1030<x<1180 and 220<y<635):continue
+                row=sorted((float(b.box[:,1].mean()),float(b.box[:,0].mean()),b.ocr_text)
+                           for b in boxes if 480<b.box[:,0].mean()<910 and abs(b.box[:,1].mean()-y)<45)
+                goal=parse_objective(''.join(t for _,_,t in row))
+                if goal and goal.kind=='story' and goal.target==chapter:
+                    self._tap((int(x),int(y)))
+                    return
+            if attempt<2:
+                self.device.swipe((990,580),(990,300),control_name='NOVICE_STORY_LIST')
+                time.sleep(.8)
+        raise RequestHumanTakeover('Requested story objective not visible; no guessed entry click')

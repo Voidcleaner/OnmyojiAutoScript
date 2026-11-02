@@ -68,3 +68,5 @@
 `leveling.LevelingRunner(config, device).run_to(chapter=10, target=40, max_batches=30, min_stamina=60)` 会明确核对普通难度与章节，只刷经验UP怪，复用原探索模块。每批读取主角等级和体力，达到目标、体力不足、识别失败或战败即停止，状态保存在本地 `leveling.json`，不购买体力。此流程仍需持续实测，尚未验证完整达到40级。
 
 练级循环默认连续3批主角等级不变即返回 `replan_needed`，避免把低级经验怪无限重复刷到资源耗尽。`first_clears.FirstClearRunner.run_route()` 支持按普通/困难章节顺序复用探索，只有实际首领胜利才写入通关记录；30级节点会返回重新规划状态，不能当作40级完成。
+
+`story.StoryRunner(config, device).run_chapter(chapter)` 将剧情作为可复用短批次：先读取新手任务，只点击与目标章节对应的“前往”，复用剧情交互/跳过/准备战斗识别，结束后重新读取任务和主角等级。任务仍在则返回 `replan_needed`；未知画面或战败会保存现场并停止。无章节参数时仅从庭院识别 NPC 推进，不猜测入口。规划器会优先处理明确的故事/剧情要求，再安排重复练级。当前角色已实测30级；此接口的完整章节入口及结束复查仍待实测，不代表已达到40级。

@@ -53,6 +53,14 @@ class PlannerTests(unittest.TestCase):
         self.assertEqual((result.stage,result.progress,result.handbook_level),(3,(5,9),12))
         self.assertEqual([(g.kind,g.target) for g in result.objectives],[('exploration_hard',5),('soul_upgrade',3)])
 
+    def test_explicit_story_precedes_repeat_farming(self):
+        goal=parse_objective('完成第十一章剧情')
+        self.assertEqual((goal.kind,goal.target),('story',11))
+        plan=choose_plan(Snapshot(30,requirements=[goal],experience_available=True))
+        self.assertEqual((plan.module,plan.target),('BeginnerQuest',11))
+        state=Snapshot(30,requirements=[goal],failures={goal.key:'initial'})
+        self.assertNotEqual(choose_plan(state).module,'BeginnerQuest')
+
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
 

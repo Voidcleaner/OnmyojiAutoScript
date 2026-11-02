@@ -42,7 +42,7 @@ def parse_objective(text):
         return Objective('orochi' if '御魂' in layer[0] else 'awakening', number(layer[1]), text)
     chapter = re.search(r'第([一二三四五六七八九十\d]+)章', text)
     if chapter:
-        return Objective('story' if '故事' in text else 'exploration_hard' if '困难' in text else 'exploration', number(chapter[1]), text)
+        return Objective('story' if any(w in text for w in ('故事','剧情')) else 'exploration_hard' if '困难' in text else 'exploration', number(chapter[1]), text)
     level = re.search(r'(?:达成|达到|至)(\d+)级', text)
     if level:
         return Objective('soul_upgrade' if '御魂' in text else 'shikigami_upgrade' if '式神' in text else 'player_level', int(level[1]), text)
@@ -82,7 +82,11 @@ def choose_plan(state, target_level=40):
     if state.unclaimed_rewards:
         return ModulePlan('ClaimNoviceRewards', reason='Free rewards first')
     eligible = [o for o in state.requirements if state.failures.get(o.key) != state.build_revision]
-    # Hosting is necessary for character XP. UI availability is required as well.
+    # Explicit story objectives unlock subsequent content before repeat farming.
+    for objective in eligible:
+        if objective.kind == 'story':
+            return ModulePlan('BeginnerQuest', objective.target, objective.text)
+    # Only dispatch party runs when availability was verified in the UI.
     if state.player_level >= 15 and state.experience_available and 'ExperienceYoukai' not in state.deferred_modules:
         return ModulePlan('ExperienceYoukai', reason='Available hosted character-XP run', requires_teammate=True)
     if state.player_level >= 15 and state.tako_available and 'Tako' not in state.deferred_modules:
@@ -108,6 +112,9 @@ def choose_plan(state, target_level=40):
 
 def run_existing(plan, config, device, *, build_revision='initial', xp_only=False):
     """Reuse the same Device and OAS modules; completion still needs UI verification."""
+    if plan.module == 'BeginnerQuest':
+        from tasks.BeginnerQuest.story import StoryRunner
+        return StoryRunner(config,device).run_chapter(plan.target)
     if plan.module == 'Orochi' and plan.target is not None and 1<=plan.target<=7:
         from tasks.BeginnerQuest.awakening import OrochiNoviceAdapter
         return OrochiNoviceAdapter(config,device).run_to(plan.target,build_revision=build_revision)
