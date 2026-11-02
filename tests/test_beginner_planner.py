@@ -92,7 +92,7 @@ class PlannerTests(unittest.TestCase):
         task.get_current_scene=Mock(side_effect=[Scene.MAIN,Scene.BATTLE_PREPARE])
         task.run_general_battle=Mock(return_value=True);task.minions_cnt=0
         task._config=SimpleNamespace(general_battle_config=None)
-        button=Mock();button.coord.return_value=(646,99)
+        button=Mock();button.front_center.return_value=(646,99)
         with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'):
             ocr.return_value.detect_and_ocr.return_value=[]
             self.assertTrue(task.fire(button))
@@ -101,11 +101,17 @@ class PlannerTests(unittest.TestCase):
         task.run_general_battle.assert_called_once()
         from module.exception import RequestHumanTakeover
         task.get_current_scene=Mock(return_value=Scene.MAIN)
-        task.run_general_battle.reset_mock();task.minions_cnt=0
+        task.run_general_battle.reset_mock();task.minions_cnt=0;task._entry_misses=2
         with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'),patch('tasks.BeginnerQuest.exploration_hard.time.monotonic',side_effect=[0,0,21]):
             ocr.return_value.detect_and_ocr.return_value=[]
             with self.assertRaises(RequestHumanTakeover):task.fire(button)
         task.run_general_battle.assert_not_called()
+        self.assertEqual(task.minions_cnt,0)
+        task._entry_misses=0;task.device.reset_mock()
+        with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'),patch('tasks.BeginnerQuest.exploration_hard.time.monotonic',side_effect=[0,0,21]):
+            ocr.return_value.detect_and_ocr.return_value=[]
+            self.assertFalse(task.fire(button))
+        task.device.swipe_desktop_window_message.assert_called_once()
         self.assertEqual(task.minions_cnt,0)
 
     def test_fast_exploration_settlement_is_not_mistaken_for_missing_entry(self):

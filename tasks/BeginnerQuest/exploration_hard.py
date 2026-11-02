@@ -13,8 +13,8 @@ class ExplorationHardAdapter(ExplorationTask):
         from tasks.Exploration.base import Scene
         from tasks.BeginnerQuest.vision import chat_close_action,exploration_click_point
         deadline=time.monotonic()+20
-        clicks=0
-        while time.monotonic()<deadline:
+        clicks=0;last_click=-100
+        while (now:=time.monotonic())<deadline:
             self.screenshot()
             action=chat_close_action(get_ocr_model().detect_and_ocr(self.device.image))
             if action:
@@ -23,6 +23,7 @@ class ExplorationHardAdapter(ExplorationTask):
                 continue
             scene=self.get_current_scene()
             if scene in (Scene.BATTLE_PREPARE,Scene.BATTLE_FIGHTING):
+                self._entry_misses=0
                 won=self.run_general_battle(self._config.general_battle_config)
                 if won:self.minions_cnt+=1
                 return bool(won)
@@ -30,16 +31,31 @@ class ExplorationHardAdapter(ExplorationTask):
                     (self.I_WIN,self.I_FALSE,self.I_REWARD,self.I_REWARD_GOLD)):
                 # A short fight may settle while the native click/scene checks run.
                 # Reuse settlement handling without another preparation phase.
+                self._entry_misses=0
                 self.current_count=(self.current_count or 0)+1
                 won=self.battle_wait(random_click_swipt_enable=False)
                 if won:self.minions_cnt+=1
                 return bool(won)
-            if scene==Scene.MAIN and self.appear(button) and clicks<3:
-                point=exploration_click_point(button.coord())
+            if scene==Scene.MAIN and clicks<2 and now-last_click>=8 and self.appear(button):
+                point=exploration_click_point(tuple(map(int,button.front_center())))
                 self.device.click(*point,control_check=False,control_name='NOVICE_START_BATTLE')
                 self.device.stuck_record_clear()
-                clicks+=1
+                clicks+=1;last_click=now
             time.sleep(.7)
+        self.screenshot()
+        if self.get_current_scene()==Scene.MAIN:
+            self._entry_misses=getattr(self,'_entry_misses',0)+1
+            if self._entry_misses<=2:
+                from module.logger import logger
+                logger.warning('Battle did not start; reposition verified map once before re-reading targets')
+                drag=((1080,150),(420,150)) if self._entry_misses==1 else ((420,150),(1080,150))
+                if getattr(self.device,'is_desktop',False):
+                    self.device.swipe_desktop_window_message(*drag,hold_time=.8)
+                else:self.device.swipe(*drag,control_name='NOVICE_REPOSITION_TARGET')
+                self.device.stuck_record_clear()
+                time.sleep(.7)
+                self.screenshot()
+                return False
         raise RequestHumanTakeover('Exploration battle entry not confirmed; do not wait on the map indefinitely')
 
     def _reset_search_state(self, reset_swipe_cnt=False):
