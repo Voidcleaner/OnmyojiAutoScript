@@ -75,6 +75,11 @@ class BeginnerQuestTests(unittest.TestCase):
         self.assertEqual(exploration_click_point((646,99)),(646,130))
         self.assertEqual(exploration_click_point((646,350)),(646,350))
 
+    def test_new_recruit_close_prompt(self):
+        action=self.decide([box('点击任意位置关闭',720,685)])
+        self.assertEqual(action.name,'continue')
+        self.assertEqual(action.point,(720,685))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 
