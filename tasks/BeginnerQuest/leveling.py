@@ -19,7 +19,7 @@ def read_stamina(image):
 
 
 class LevelingRunner(NoviceHub):
-    def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3):
+    def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3,xp_only=True):
         if not 1<=chapter<=28 or not 1<=target<=60:raise ValueError('Unsupported chapter/player-level target')
         root=Path('log/beginner_quest')/self.config.config_name
         root.mkdir(parents=True,exist_ok=True)
@@ -44,7 +44,7 @@ class LevelingRunner(NoviceHub):
             if status=='unverified_ui':raise RequestHumanTakeover('Player level/stamina not verified; do not keep spending')
             if status!='running':return state
             try:
-                run_existing(ModulePlan('Exploration',chapter),self.config,self.device,xp_only=True)
+                run_existing(ModulePlan('Exploration',chapter),self.config,self.device,xp_only=xp_only)
             except Exception as exc:
                 state.update(status='stopped_error',reason=f'{type(exc).__name__}: {exc}')
                 (root/'leveling.json').write_text(json.dumps(state),encoding='utf-8')

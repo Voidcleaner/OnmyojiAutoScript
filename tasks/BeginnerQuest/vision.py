@@ -113,3 +113,16 @@ def prepare_is_enabled(image, point):
     x,y=point
     patch=image[max(0,y-32):min(720,y+32),max(0,x-32):min(1280,x+32)]
     return patch.size > 0 and float(cv2.cvtColor(patch,cv2.COLOR_RGB2HSV)[:,:,2].mean()) >= 95
+
+
+def read_courtyard_story_gate(image):
+    """Read the locked story marker only, excluding avatar/shikigami levels."""
+    import re
+    from module.ocr.models import get_ocr_model
+    crop=cv2.resize(image[315:395,320:455],None,fx=3,fy=3)
+    levels=[]
+    for box in get_ocr_model().detect_and_ocr(crop):
+        match=re.fullmatch(r'Lv[.:：·]?(\d{1,2})',box.ocr_text.replace(' ',''),re.I)
+        if box.score>=.75 and match and 1<=int(match[1])<=60:
+            levels.append(int(match[1]))
+    return levels[0] if len(levels)==1 else None

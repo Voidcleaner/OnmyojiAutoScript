@@ -166,6 +166,11 @@ class ScriptTask:
             if action:
                 return action
         courtyard = self.templates(image, {'courtyard_scene'})
+        if courtyard:
+            from tasks.BeginnerQuest.vision import read_courtyard_story_gate
+            gate=read_courtyard_story_gate(image)
+            if gate is not None:
+                raise TaskEnd(f'BeginnerQuest: story requires player level {gate}; replan leveling')
         excluded = ((0,145,300,320),(1120,100,1280,600),(0,590,1280,720)) if courtyard else ()
         if any('初入平安京' in b.ocr_text for b in boxes):
             return None

@@ -74,6 +74,14 @@ class PlannerTests(unittest.TestCase):
         self.assertIsNone(parse_countdown('437+'))
         self.assertEqual(parse_countdown('1小时2分钟3秒'),3723)
 
+    def test_novice_exploration_keeps_disabled_candidate_rotation(self):
+        from types import SimpleNamespace
+        from tasks.BeginnerQuest.exploration_hard import ExplorationNormalAdapter
+        from tasks.Exploration.config import AutoRotate
+        adapter=object.__new__(ExplorationNormalAdapter)
+        adapter.config=SimpleNamespace(exploration=SimpleNamespace(exploration_config=SimpleNamespace(auto_rotate=AutoRotate.no)))
+        self.assertFalse(adapter.ui_click(adapter.I_E_AUTO_ROTATE_OFF))
+
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
 

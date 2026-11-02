@@ -9,6 +9,15 @@ from tasks.Exploration.script_task import ScriptTask as ExplorationTask
 
 class ExplorationHardAdapter(ExplorationTask):
     difficulty="困难"
+    def ui_click(self, click, *args, **kwargs):
+        from tasks.Exploration.config import AutoRotate
+        if (click is self.I_E_AUTO_ROTATE_OFF
+                and self.config.exploration.exploration_config.auto_rotate==AutoRotate.no):
+            # The inherited loop enables candidate rotation even when disabled.
+            # Novice batches keep their verified party and fire fights directly.
+            return False
+        return super().ui_click(click,*args,**kwargs)
+
     def run(self):
         from tasks.Exploration.base import Scene
         self.screenshot()

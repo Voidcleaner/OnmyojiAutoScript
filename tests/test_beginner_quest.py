@@ -59,6 +59,15 @@ class BeginnerQuestTests(unittest.TestCase):
         cv2.circle(self.image,(400,128),26,(240,200,120),3)
         self.assertEqual(ellipsis_action(self.image).point,(400,128))
 
+    def test_courtyard_level_gate_uses_explicit_lv_label(self):
+        from tasks.BeginnerQuest.vision import read_courtyard_story_gate
+        from unittest.mock import patch
+        with patch('module.ocr.models.get_ocr_model') as model:
+            model.return_value.detect_and_ocr.return_value=[box('Lv:31')]
+            self.assertEqual(read_courtyard_story_gate(self.image),31)
+            model.return_value.detect_and_ocr.return_value=[box('31')]
+            self.assertIsNone(read_courtyard_story_gate(self.image))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 
