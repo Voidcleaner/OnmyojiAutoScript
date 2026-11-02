@@ -99,6 +99,18 @@ class BeginnerQuestTests(unittest.TestCase):
                 Window._desktop_press(device,100,200,.01)
             self.assertEqual(cursor.call_args.args,((10,20),))
 
+    def test_story_hud_clears_battle_state_left_from_previous_client(self):
+        self.task.battle_pending = True
+        with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates') as templates:
+            model.return_value.detect_and_ocr.return_value=[]
+            templates.side_effect=lambda im,k: True if k == {'search_scene'} else None
+            self.task.decide(self.image)
+            self.assertFalse(self.task.battle_pending)
+
+    def test_duplicate_account_login_stops_instead_of_relogging(self):
+        with self.assertRaises(RequestHumanTakeover):
+            self.decide([box('检测到账号在其他设备登录',640,325)])
+
     def test_resource_prompt_stops(self):
         with self.assertRaises(RequestHumanTakeover):
             self.decide([box('体力不足')])

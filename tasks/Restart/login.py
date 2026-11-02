@@ -80,6 +80,10 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
             self._burst()
             if self.device.is_desktop:
                 from tasks.BeginnerQuest.script_task import ScriptTask as BeginnerTask
+                from module.ocr.models import get_ocr_model
+                central = get_ocr_model().detect_and_ocr(self.device.image[220:450, 350:950])
+                if any('其他设备登录' in b.ocr_text.replace(' ', '') for b in central):
+                    raise RequestHumanTakeover('Account logged in on another device; stop to prevent multi-instance login conflicts')
                 if BeginnerTask(self.config, self.device).scene_is_ready(self.device.image):
                     logger.info('Login confirmed by beginner story/courtyard HUD')
                     login_success = True

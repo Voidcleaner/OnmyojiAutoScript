@@ -66,7 +66,7 @@ class ScriptTask:
         if any('借用' in b.ocr_text and ('可以' in b.ocr_text or '解锁' in b.ocr_text) for b in boxes):
             self.borrow_seen = True
         # Never interpret scrolling chat, account screens or shop labels as quest buttons.
-        blockers = ('体力不足', '购买体力', '充值', '再次挑战', '账号登录')
+        blockers = ('体力不足', '购买体力', '充值', '再次挑战', '账号登录', '其他设备登录')
         if any((len(b.ocr_text) <= 16 and any(word in b.ocr_text for word in blockers)) or b.ocr_text == '失败' for b in boxes):
             raise RequestHumanTakeover('BeginnerQuest: resource, login or failed-battle prompt')
         prepare_button = self.templates(image, {'prepare'})
@@ -75,6 +75,9 @@ class ScriptTask:
                 raise RequestHumanTakeover('BeginnerQuest: verify borrowed damage dealer and fire provider before battle')
             self.battle_pending = False
             return prepare_button
+        if self.battle_pending and self.templates(image, {'search_scene'}):
+            logger.info('BeginnerQuest: clear old battle state after return to story/courtyard')
+            self.battle_pending = False
         if self.battle_pending:
             result = (self.templates(image, {'reward'}) or choose_text(
                 boxes, ('点击屏幕继续', '点击任意位置继续', '领取奖励'),
