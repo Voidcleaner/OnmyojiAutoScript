@@ -205,3 +205,10 @@ class NoviceResourceTests(unittest.TestCase):
         with patch('module.device.method.windows_impl.human_track',return_value=[(10,10)]),patch('module.device.method.windows_impl.time.sleep'),patch('win32api.GetCursorPos',return_value=(99,88)),patch('win32api.SetCursorPos'),patch('win32gui.ClientToScreen',side_effect=lambda hwnd,coord:coord),patch('win32gui.SendMessageTimeout',side_effect=[None,error,error]),patch('module.device.method.windows_impl.PostMessage') as post:
             self.assertFalse(Window.swipe_desktop_window_message(task,(10,10),(20,20)))
         self.assertEqual(post.call_args.args[1],WM_LBUTTONUP)
+
+
+    def test_stamina_keeps_leading_digit_from_full_hud_context(self):
+        from tasks.BeginnerQuest.leveling import read_stamina
+        with patch('tasks.BeginnerQuest.leveling.get_ocr_model') as model:
+            model.return_value.detect_and_ocr.return_value=[box('126+',965,32),box('739',784,33),box('26',965,600)]
+            self.assertEqual(read_stamina(np.zeros((720,1280,3),np.uint8)),126)

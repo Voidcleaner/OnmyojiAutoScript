@@ -12,6 +12,13 @@ from tasks.GameUi.page import page_main
 
 
 def read_stamina(image):
+    # Preserve the whole HUD context: an isolated enlarged crop can drop a
+    # narrow leading 1 (126 became 26 on the CrossOver client).
+    values=[int(b.ocr_text.replace(' ','').rstrip('+'))
+            for b in get_ocr_model().detect_and_ocr(image)
+            if b.score>=.8 and 875<b.box[:,0].mean()<1040 and 5<b.box[:,1].mean()<65
+            and re.fullmatch(r'\d+\+?',b.ocr_text.replace(' ',''))]
+    if len(values)==1:return values[0]
     crop=cv2.resize(image[5:65,875:1040],None,fx=4,fy=4)
     values=[int(b.ocr_text.replace(' ','').rstrip('+')) for b in get_ocr_model().detect_and_ocr(crop)
             if b.score>=.7 and re.fullmatch(r'\d+\+?',b.ocr_text.replace(' ',''))]

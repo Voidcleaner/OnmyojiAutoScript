@@ -236,7 +236,7 @@ page_town.connect(page_hyakkiyakou, GameUiAssets.I_TOWN_GOTO_HYAKKIYAKOU, key="p
 
 
 # 探索主页。
-page_exploration = Page(GameUiAssets.I_CHECK_EXPLORATION, category="global")
+page_exploration = Page(any_of(GameUiAssets.I_CHECK_EXPLORATION, GameUiAssets.I_CHECK_EXPLORATION_NEW), category="global")
 page_exploration.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_exploration->page_main")
 page_exploration.add_enter_failure_hooks(ExplorationAssets.I_E_OPEN_FOLDER)
 def enter_exploration(task):
