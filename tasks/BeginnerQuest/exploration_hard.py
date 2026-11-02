@@ -12,7 +12,7 @@ class ExplorationHardAdapter(ExplorationTask):
     def fire(self, button):
         from tasks.Exploration.base import Scene
         from tasks.BeginnerQuest.vision import chat_close_action,exploration_click_point
-        deadline=time.monotonic()+10
+        deadline=time.monotonic()+20
         clicks=0
         while time.monotonic()<deadline:
             self.screenshot()
@@ -24,6 +24,14 @@ class ExplorationHardAdapter(ExplorationTask):
             scene=self.get_current_scene()
             if scene in (Scene.BATTLE_PREPARE,Scene.BATTLE_FIGHTING):
                 won=self.run_general_battle(self._config.general_battle_config)
+                if won:self.minions_cnt+=1
+                return bool(won)
+            if scene==Scene.UNKNOWN and any(self.appear(rule,threshold=.85) for rule in
+                    (self.I_WIN,self.I_FALSE,self.I_REWARD,self.I_REWARD_GOLD)):
+                # A short fight may settle while the native click/scene checks run.
+                # Reuse settlement handling without another preparation phase.
+                self.current_count=(self.current_count or 0)+1
+                won=self.battle_wait(random_click_swipt_enable=False)
                 if won:self.minions_cnt+=1
                 return bool(won)
             if scene==Scene.MAIN and self.appear(button) and clicks<3:

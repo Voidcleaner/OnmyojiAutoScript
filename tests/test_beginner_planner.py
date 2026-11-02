@@ -102,11 +102,30 @@ class PlannerTests(unittest.TestCase):
         from module.exception import RequestHumanTakeover
         task.get_current_scene=Mock(return_value=Scene.MAIN)
         task.run_general_battle.reset_mock();task.minions_cnt=0
-        with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'),patch('tasks.BeginnerQuest.exploration_hard.time.monotonic',side_effect=[0,0,11]):
+        with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'),patch('tasks.BeginnerQuest.exploration_hard.time.monotonic',side_effect=[0,0,21]):
             ocr.return_value.detect_and_ocr.return_value=[]
             with self.assertRaises(RequestHumanTakeover):task.fire(button)
         task.run_general_battle.assert_not_called()
         self.assertEqual(task.minions_cnt,0)
+
+    def test_fast_exploration_settlement_is_not_mistaken_for_missing_entry(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from tasks.BeginnerQuest.exploration_hard import ExplorationNormalAdapter
+        from tasks.Exploration.base import Scene
+        task=object.__new__(ExplorationNormalAdapter)
+        task.device=Mock(image=None);task.screenshot=Mock()
+        task.get_current_scene=Mock(return_value=Scene.UNKNOWN)
+        task.appear=Mock(side_effect=lambda rule,**kw:rule is task.I_REWARD_GOLD)
+        task.run_general_battle=Mock();task.battle_wait=Mock(return_value=True)
+        task.minions_cnt=0;task.current_count=0
+        with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr:
+            ocr.return_value.detect_and_ocr.return_value=[]
+            self.assertTrue(task.fire(Mock()))
+        task.run_general_battle.assert_not_called()
+        task.battle_wait.assert_called_once_with(random_click_swipt_enable=False)
+        task.device.click.assert_not_called()
+        self.assertEqual((task.current_count,task.minions_cnt),(1,1))
 
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
