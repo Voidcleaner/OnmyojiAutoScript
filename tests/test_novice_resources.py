@@ -185,3 +185,23 @@ class NoviceResourceTests(unittest.TestCase):
         self.assertEqual(result['status'],'complete')
         self.assertEqual(run.call_args.args[0].module,'ExplorationHardAdapter')
         self.assertEqual(result['difficulty'],'hard')
+
+
+    def test_crossover_drag_timeout_releases_without_replaying_down(self):
+        import pywintypes
+        from module.device.method.windows_impl import Window
+        from win32con import WM_LBUTTONDOWN,WM_LBUTTONUP
+        error=pywintypes.error(1460,'SendMessageTimeout','Timeout')
+        for fail_at in (1,2,4):
+            task=SimpleNamespace(desktop_window_restore_if_minimized=Mock(),root_handle_num=1234,
+                desktop_message_coord=lambda x,y:(x,y),config=SimpleNamespace(script=SimpleNamespace(device=SimpleNamespace(screenshot_method='macos_window'))))
+            sequence=[None]*(fail_at-1)+[error]+[None]*10
+            with patch('module.device.method.windows_impl.human_track',return_value=[(10,10),(20,20)]),patch('module.device.method.windows_impl.time.sleep'),patch('win32api.GetCursorPos',return_value=(99,88)),patch('win32api.SetCursorPos') as cursor,patch('win32gui.ClientToScreen',side_effect=lambda hwnd,coord:coord),patch('win32gui.SendMessageTimeout',side_effect=sequence) as send:
+                self.assertFalse(Window.swipe_desktop_window_message(task,(10,10),(20,20),hold_time=.8))
+            messages=[c.args[1] for c in send.call_args_list]
+            self.assertLessEqual(messages.count(WM_LBUTTONDOWN),1)
+            if fail_at>1:self.assertEqual(messages[-1],WM_LBUTTONUP)
+            self.assertEqual(cursor.call_args.args[0],(99,88))
+        with patch('module.device.method.windows_impl.human_track',return_value=[(10,10)]),patch('module.device.method.windows_impl.time.sleep'),patch('win32api.GetCursorPos',return_value=(99,88)),patch('win32api.SetCursorPos'),patch('win32gui.ClientToScreen',side_effect=lambda hwnd,coord:coord),patch('win32gui.SendMessageTimeout',side_effect=[None,error,error]),patch('module.device.method.windows_impl.PostMessage') as post:
+            self.assertFalse(Window.swipe_desktop_window_message(task,(10,10),(20,20)))
+        self.assertEqual(post.call_args.args[1],WM_LBUTTONUP)

@@ -439,6 +439,7 @@ class Window(Handle):
             from win32api import GetCursorPos, SetCursorPos
             from win32gui import ClientToScreen, SendMessageTimeout
             from win32con import SMTO_ABORTIFHUNG
+            import pywintypes
             previous = GetCursorPos()
             pressed = False
             def move(point, held=0):
@@ -460,12 +461,19 @@ class Window(Handle):
                 SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, end, SMTO_ABORTIFHUNG, 1000)
                 pressed = False
                 time.sleep(.12)
+            except pywintypes.error as exc:
+                if exc.winerror != 1460:
+                    raise
+                # The event may have arrived despite its missing acknowledgement.
+                # Never replay DOWN or the trace; the caller must read a fresh frame.
+                logger.warning('CrossOver drag acknowledgement timed out; release mouse and verify next frame')
+                return False
             finally:
                 if pressed:
                     try:
                         SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, MAKELONG(*self.desktop_message_coord(*endPos)), SMTO_ABORTIFHUNG, 1000)
                     except Exception:
-                        pass
+                        PostMessage(hwnd, WM_LBUTTONUP, 0, MAKELONG(*self.desktop_message_coord(*endPos)))
                 SetCursorPos(previous)
             self._desktop_cursor = tuple(endPos)
             return
