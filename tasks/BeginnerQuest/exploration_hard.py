@@ -9,6 +9,40 @@ from tasks.Exploration.script_task import ScriptTask as ExplorationTask
 
 class ExplorationHardAdapter(ExplorationTask):
     difficulty="困难"
+    def _reset_search_state(self, reset_swipe_cnt=False):
+        super()._reset_search_state(reset_swipe_cnt)
+        search=getattr(self,'_novice_scene_search',None)
+        if search is not None:search.reset()
+
+    def _search_next_area(self):
+        from tasks.Exploration.config import UpType
+        from tasks.BeginnerQuest.search import SceneSearch
+        from module.logger import logger
+        if self.config.exploration.exploration_config.up_type!=UpType.ALL:
+            return super()._search_next_area()
+        if not self.search_fail_timer.started():
+            self.search_fail_timer.start()
+            return
+        if not self.search_fail_timer.reached():return
+        search=getattr(self,'_novice_scene_search',None)
+        if search is None:
+            search=self._novice_scene_search=SceneSearch(limit=8)
+        drag=search.next_drag(self.device.image)
+        if drag is None:
+            logger.warning('Novice exploration exhausted bounded search in both directions')
+            self._reset_search_state(reset_swipe_cnt=True)
+            self.quit_explore()
+            return
+        logger.info('Novice exploration search %s/8: %s',search.count,drag)
+        self.device.click_record_remove('NOVICE_EXPLORE_SEARCH')
+        if getattr(self.device,'is_desktop',False):
+            self.device.swipe_desktop_window_message(*drag,hold_time=.8)
+        else:
+            self.device.swipe(*drag,control_name='NOVICE_EXPLORE_SEARCH')
+        time.sleep(.3)
+        self.screenshot()
+        self.search_fail_timer.reset()
+
     def ui_click(self, click, *args, **kwargs):
         from tasks.Exploration.config import AutoRotate
         if (click is self.I_E_AUTO_ROTATE_OFF
