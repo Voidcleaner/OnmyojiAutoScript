@@ -244,6 +244,15 @@ def enter_exploration(task):
         # The paper's lower edge/shadow can match without accepting clicks.
         # Use its verified upper interior before trying broad legacy templates.
         task.device.click(741,244,control_check=False,control_name='BEGINNER_EXPLORE')
+        if getattr(task.device,'is_desktop',False):
+            from time import monotonic,sleep
+            deadline=monotonic()+12
+            while monotonic()<deadline:
+                task.screenshot()
+                if (task.appear(GameUiAssets.I_CHECK_EXPLORATION)
+                        or task.appear(GameUiAssets.I_CHECK_EXPLORATION_NEW)):
+                    return True
+                sleep(.4)
         return True
     return bool(task.appear_then_click(GameUiAssets.I_MAIN_GOTO_EXPLORATION)
                 or task.appear_then_click(GameUiAssets.I_MAIN_GOTO_BEGINNER_EXPLORATION))

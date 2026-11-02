@@ -127,6 +127,17 @@ class PlannerTests(unittest.TestCase):
         task.device.click.assert_not_called()
         self.assertEqual((task.current_count,task.minions_cnt),(1,1))
 
+    def test_desktop_exploration_confirms_loading_before_returning(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from tasks.GameUi.default_pages import enter_exploration
+        from tasks.GameUi.assets import GameUiAssets as A
+        task=SimpleNamespace(device=Mock(is_desktop=True),screenshot=Mock(),appear_then_click=Mock())
+        task.appear=lambda rule:rule in (A.I_CHECK_BEGINNER_MAIN,A.I_CHECK_BEGINNER_GUIDANCE) or (rule is A.I_CHECK_EXPLORATION_NEW and task.screenshot.called)
+        self.assertTrue(enter_exploration(task))
+        task.screenshot.assert_called_once()
+        task.appear_then_click.assert_not_called()
+
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
 
