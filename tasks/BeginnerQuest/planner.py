@@ -96,7 +96,7 @@ def choose_plan(state, target_level=40):
         return ModulePlan('BeginnerQuest', reason='Available story before repeated farming')
     for objective in eligible:
         if objective.kind.startswith('exploration') and objective.target <= state.unlocked_chapter:
-            return ModulePlan('Exploration', objective.target, objective.text)
+            return ModulePlan('ExplorationHardAdapter' if objective.kind=='exploration_hard' else 'Exploration', objective.target, objective.text)
         if objective.kind.endswith('_upgrade'):
             return ModulePlan('BuildAdapter', objective.target, objective.text)
     # Never jump to a locked guide chapter or repeatedly retry a failed boss.
@@ -108,12 +108,18 @@ def choose_plan(state, target_level=40):
 
 def run_existing(plan, config, device):
     """Reuse the same Device and OAS modules; completion still needs UI verification."""
-    allowed = {'Orochi','Exploration','ExperienceYoukai','Tako'}
+    if plan.module == 'Orochi' and plan.target is not None and 1<=plan.target<=5:
+        from tasks.BeginnerQuest.awakening import OrochiNoviceAdapter
+        return OrochiNoviceAdapter(config,device).run_to(plan.target)
+    if plan.module == 'AwakeningAdapter':
+        from tasks.BeginnerQuest.awakening import AwakeningAdapter
+        return AwakeningAdapter(config,device).run_to(plan.target)
+    allowed = {'Orochi','Exploration','ExplorationHardAdapter','ExperienceYoukai','Tako'}
     if plan.module not in allowed:
         raise ValueError('This plan requires a novice UI adapter')
     if plan.module == 'Orochi' and (plan.target is None or not 1 <= plan.target <= 13):
         raise ValueError('Unsupported soul layer')
-    if plan.module == 'Exploration' and (plan.target is None or not 1 <= plan.target <= 28):
+    if plan.module in {'Exploration','ExplorationHardAdapter'} and (plan.target is None or not 1 <= plan.target <= 28):
         raise ValueError('Unsupported exploration chapter')
     changed = []
     def override(obj, key, value):
@@ -125,7 +131,7 @@ def run_existing(plan, config, device):
         override(c,'layer',list(Layer)[plan.target-1])
         override(c,'limit_count',1)
         override(c,'limit_time',time(0,5))
-    elif plan.module == 'Exploration':
+    elif plan.module in {'Exploration','ExplorationHardAdapter'}:
         from tasks.Exploration.config import UserStatus,ExplorationLevel,UpType,AutoRotate
         c=config.exploration.exploration_config
         override(c,'user_status',UserStatus.ALONE)
@@ -135,7 +141,11 @@ def run_existing(plan, config, device):
         override(c,'up_type',UpType.ALL)
         override(c,'auto_rotate',AutoRotate.no)
     try:
-        handler=importlib.import_module(f'tasks.{plan.module}.script_task').ScriptTask(config,device)
+        if plan.module=='ExplorationHardAdapter':
+            from tasks.BeginnerQuest.exploration_hard import ExplorationHardAdapter
+            handler=ExplorationHardAdapter(config,device)
+        else:
+            handler=importlib.import_module(f'tasks.{plan.module}.script_task').ScriptTask(config,device)
         original=handler.battle_wait
         def stop_on_loss(*args,**kwargs):
             result=original(*args,**kwargs)

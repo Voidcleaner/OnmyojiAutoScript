@@ -14,6 +14,10 @@ class PlannerTests(unittest.TestCase):
         goal=parse_objective('完成【主线探索·困难】第五章')
         self.assertEqual((goal.kind,goal.target),('exploration_hard',5))
 
+    def test_hard_objective_never_dispatches_normal_exploration(self):
+        goal=parse_objective('完成【主线探索·困难】第五章')
+        self.assertEqual(choose_plan(Snapshot(28,requirements=[goal],unlocked_chapter=9)).module,'ExplorationHardAdapter')
+
     def test_rewards_before_consuming_stamina(self):
         self.assertEqual(choose_plan(Snapshot(12,unclaimed_rewards=True)).module,'ClaimNoviceRewards')
 

@@ -102,5 +102,14 @@ class NoviceHub(GameUi):
         self._tap((1230,180))
         boxes=self._claim_visible()
         observation=observe_tasks(boxes)
+        # Reward transitions can swallow the first task-tab click. Never treat
+        # a blank observation as an empty list of remaining objectives.
+        for _ in range(2):
+            if observation.stage is not None and observation.progress is not None and observation.handbook_level is not None:
+                break
+            boxes=self._tap((1230,180))
+            observation=observe_tasks(boxes)
+        if observation.stage is None or observation.progress is None or observation.handbook_level is None:
+            raise RequestHumanTakeover('Novice task tab did not yield stage, progress and handbook level')
         self.goto_page(page_main)
         return player_level,observation

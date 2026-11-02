@@ -13,7 +13,7 @@ from tasks.Component.GeneralRoom.general_room import GeneralRoom
 from tasks.Component.GeneralInvite.general_invite import GeneralInvite
 from tasks.Component.ReplaceShikigami.replace_shikigami import ReplaceShikigami
 from tasks.Exploration.assets import ExplorationAssets
-from tasks.Exploration.config import ChooseRarity, AutoRotate, AttackNumber, UpType
+from tasks.Exploration.config import ChooseRarity, AutoRotate, AttackNumber, UpType, ExplorationLevel
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_shikigami_records, page_main
@@ -162,7 +162,11 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
             if self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=1):
                 continue
             self.device.click_record_clear()
-            self.swipe(self.S_SWIPE_LEVEL_DOWN)
+            chapter_order = {level.value:i+1 for i,level in enumerate(ExplorationLevel)}
+            visible = [chapter_order[text] for text in text1 if text in chapter_order]
+            desired = chapter_order.get(explorationConfig.exploration_config.exploration_level)
+            earlier = visible and desired is not None and desired < min(visible)
+            self.swipe(self.S_SWIPE_LEVEL_UP if earlier else self.S_SWIPE_LEVEL_DOWN)
             swipeCount += 1
             debug_info = f"Swiped {swipeCount} times, current exploration level: {text1}"
             logger.info(debug_info)
