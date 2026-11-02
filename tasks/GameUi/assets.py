@@ -140,6 +140,7 @@ class GameUiAssets:
 	# 珍旅居页面标志 
 	I_CHECK_TRAVEL = RuleImage(roi_front=(1134,583,78,77), roi_back=(1134,583,78,77), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_travel.png")
 	# 式神录页面标志 
+	I_CHECK_RECORDS_NEW = RuleImage(roi_front=(90,8,110,40), roi_back=(80,0,140,65), threshold=0.9, method="Template matching", file="./tasks/GameUi/page/page_check_records_new.png")
 	I_CHECK_RECORDS = RuleImage(roi_front=(269,71,55,50), roi_back=(269,71,55,50), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_records.png")
 	# 阴阳术页面标志 
 	I_CHECK_ONMYODO = RuleImage(roi_front=(1166,117,84,547), roi_back=(1166,117,84,547), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_onmyodo.png")

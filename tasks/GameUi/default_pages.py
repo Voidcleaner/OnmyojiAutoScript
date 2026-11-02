@@ -70,12 +70,24 @@ page_main.add_enter_success_hooks(
 )
 
 # 庭院区域页面。
-page_shikigami_records = Page(GameUiAssets.I_CHECK_RECORDS, category="global")
+page_shikigami_records = Page(any_of(GameUiAssets.I_CHECK_RECORDS,GameUiAssets.I_CHECK_RECORDS_NEW), category="global")
 page_shikigami_records.add_enter_failure_hooks(conditional_action(condition=page_main.recognizer,
                                                                   action=RestartAssets.C_LOGIN_SCROLL_CLOSE_AREA))
 page_shikigami_records.add_enter_success_hooks(GlobalGameAssets.I_UI_CANCEL_SAMLL)
 page_shikigami_records.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_shikigami_records->page_main")
-page_main.connect(page_shikigami_records, GameUiAssets.I_MAIN_GOTO_SHIKIGAMI_RECORDS, key="page_main->page_shikigami_records")
+def enter_shikigami_records(task):
+    if task.appear_then_click(GameUiAssets.I_MAIN_GOTO_SHIKIGAMI_RECORDS):
+        return True
+    if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE):
+        from module.ocr.models import get_ocr_model
+        from tasks.BeginnerQuest.vision import choose_text
+        action=choose_text(get_ocr_model().detect_and_ocr(task.device.image),('式神',),(1000,590,1250,710),'OPEN_SHIKIGAMI')
+        if action:
+            task.device.click(*action.point,control_check=False,control_name=action.name)
+            return True
+    return False
+
+page_main.connect(page_shikigami_records, enter_shikigami_records, key="page_main->page_shikigami_records")
 
 page_onmyodo = Page(GameUiAssets.I_CHECK_ONMYODO, category="global")
 page_onmyodo.add_enter_failure_hooks(conditional_action(condition=page_main.recognizer,

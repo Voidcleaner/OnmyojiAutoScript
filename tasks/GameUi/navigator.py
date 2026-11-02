@@ -42,7 +42,11 @@ class GameUi(BaseTask, GameUiAssets):
     from tasks.Component.phone_prompt import handle_phone_prompt
     from tasks.Component.continue_prompt import handle_continue_prompt
 
+    from tasks.Component.optional_prompt import handle_guild_join_prompt,handle_cosmetic_activation
+
     DEFAULT_UNKNOWN_CLOSERS = [
+        handle_guild_join_prompt,
+        handle_cosmetic_activation,
         handle_phone_prompt,
         handle_continue_prompt,
         GlobalGameAssets.I_UI_CLOSE_CELEBRATION,
