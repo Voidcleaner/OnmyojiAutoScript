@@ -72,6 +72,33 @@ class BeginnerQuestTests(unittest.TestCase):
             templates.side_effect=lambda im,k: True if k == {'intro_frame_top'} else None
             self.assertIsNone(self.task.decide(self.image))
 
+    def test_visible_prepare_button_recovers_failed_prepare_click(self):
+        from tasks.BeginnerQuest.vision import Action
+        self.task.battle_pending = True
+        with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates') as templates:
+            model.return_value.detect_and_ocr.return_value=[]
+            templates.side_effect=lambda im,k: Action('prepare',(1180,590)) if k == {'prepare'} else None
+            self.assertEqual(self.task.decide(self.image).point,(1180,590))
+            self.assertFalse(self.task.battle_pending)
+
+    def test_login_movie_wake_is_once_and_never_on_known_screens(self):
+        from tasks.Restart.intro import LoginIntro
+        intro = LoginIntro()
+        image = np.random.default_rng(2).integers(0,150,self.image.shape,dtype=np.uint8)
+        self.assertIsNone(intro.decide(image,known_screen=True))
+        self.assertIsNone(intro.decide(self.image))
+        self.assertEqual(intro.decide(image).name,'login_movie_wake')
+        self.assertIsNone(intro.decide(image))
+        self.assertEqual(intro.decide(image,[box('点击屏幕跳过',1150,60)]).name,'login_skip')
+
+    def test_crossover_cursor_is_restored_when_click_times_out(self):
+        from module.device.method.windows_impl import Window
+        device = SimpleNamespace(config=SimpleNamespace(script=SimpleNamespace(device=SimpleNamespace(screenshot_method='macos_window'))),root_handle_num=123,desktop_window_restore_if_minimized=lambda:None,move_desktop_window_message=lambda x,y:None,desktop_message_coord=lambda x,y:(x,y))
+        with patch('win32api.GetCursorPos',return_value=(10,20)), patch('win32api.SetCursorPos') as cursor, patch('win32gui.ClientToScreen',return_value=(300,400)), patch('win32gui.SendMessageTimeout',side_effect=TimeoutError):
+            with self.assertRaises(TimeoutError):
+                Window._desktop_press(device,100,200,.01)
+            self.assertEqual(cursor.call_args.args,((10,20),))
+
     def test_resource_prompt_stops(self):
         with self.assertRaises(RequestHumanTakeover):
             self.decide([box('体力不足')])

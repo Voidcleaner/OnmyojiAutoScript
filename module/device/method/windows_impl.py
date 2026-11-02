@@ -265,6 +265,22 @@ class Window(Handle):
         hwnd = self.root_handle_num
         self.move_desktop_window_message(x, y)
         lparam = MAKELONG(*self.desktop_message_coord(x, y))
+        if self.config.script.device.screenshot_method == 'macos_window':
+            # Wine's movie player reads GetCursorPos rather than lParam alone.
+            # Keep clicks addressed to this HWND, without activating the window.
+            from win32api import GetCursorPos, SetCursorPos
+            from win32gui import ClientToScreen, SendMessageTimeout
+            from win32con import SMTO_ABORTIFHUNG
+            previous = GetCursorPos()
+            try:
+                SetCursorPos(ClientToScreen(hwnd, self.desktop_message_coord(x, y)))
+                SendMessageTimeout(hwnd, WM_MOUSEMOVE, 0, lparam, SMTO_ABORTIFHUNG, 1000)
+                SendMessageTimeout(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lparam, SMTO_ABORTIFHUNG, 1000)
+                time.sleep(press_time)
+                SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, lparam, SMTO_ABORTIFHUNG, 1000)
+            finally:
+                SetCursorPos(previous)
+            return
         PostMessage(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lparam)
         time.sleep(press_time)
         PostMessage(hwnd, WM_LBUTTONUP, 0, lparam)

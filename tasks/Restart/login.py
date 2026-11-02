@@ -35,6 +35,8 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
         confirm_timer = Timer(1.5, count=2).start()
         orientation_timer = Timer(10)
         login_success = False
+        from tasks.Restart.intro import LoginIntro
+        intro = LoginIntro()
         # 本次登录已处理过的 MPay 弹窗次数，用于给「关掉又重弹」封顶
         popup_handled = 0
 
@@ -76,6 +78,26 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
             if not self.device.check_screen_size_sample():
                 continue
             self._burst()
+            if self.device.is_desktop:
+                from tasks.BeginnerQuest.script_task import ScriptTask as BeginnerTask
+                if BeginnerTask(self.config, self.device).scene_is_ready(self.device.image):
+                    logger.info('Login confirmed by beginner story/courtyard HUD')
+                    login_success = True
+                    break
+                from module.ocr.models import get_ocr_model
+                known_login = (self.appear(self.I_LOGIN_8) or self.appear(self.I_LOGIN_SPECIFIC_SERVE)
+                               or self.appear(self.I_BUFF_1) or self.appear(self.I_CREATE_ACCOUNT))
+                # OCR only the small movie-control corner, converting its boxes
+                # back to full client coordinates for the shared selector.
+                boxes = [] if known_login else get_ocr_model().detect_and_ocr(self.device.image[:130, 900:])
+                for box in boxes:
+                    box.box[:, 0] += 900
+                action = intro.decide(self.device.image, boxes, known_screen=bool(known_login))
+                if action:
+                    logger.info('Login movie action: %s', action.name)
+                    self.device.click(*action.point, control_check=False, control_name=action.name)
+                    time.sleep(.8)
+                    continue
 
             # 取消继续战斗
             if self.appear_then_click(self.I_UI_CANCEL_SAMLL, interval=0.8):
@@ -104,8 +126,8 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
             #     raise RequestHumanTakeover('Network error')
 
             # 跳过观看视频
-            # if self.ocr_appear_click(self.O_LOGIN_SKIP_1, interval=1):
-            #     continue
+            if not self.device.is_desktop and self.ocr_appear_click(self.O_LOGIN_SKIP_1, interval=1):
+                continue
             # 下载插画
             if self.appear_then_click(self.I_LOGIN_LOAD_DOWN, interval=1):
                 logger.info('Download inbetweening')
@@ -173,7 +195,10 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
                     logger.info('Cancel switch from early server to normal server')
                     continue
             if self.ocr_appear_click(self.O_LOGIN_ENTER_GAME_ORIGIN, interval=3) or self.ocr_appear_click(self.O_LOGIN_ENTER_GAME, interval=3):
-                self.wait_until_appear(self.I_LOGIN_SPECIFIC_SERVE, True, wait_time=5)
+                if not self.device.is_desktop:
+                    self.wait_until_appear(self.I_LOGIN_SPECIFIC_SERVE, True, wait_time=5)
+                else:
+                    time.sleep(.5)
                 continue
 
         return login_success

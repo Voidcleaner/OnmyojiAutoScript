@@ -1,5 +1,16 @@
 [
   {
+    "file": "tasks/BeginnerQuest/templates/prepare_button.png",
+    "kind": "prepare",
+    "region": [
+      1030,
+      450,
+      1280,
+      720
+    ],
+    "threshold": 0.88
+  },
+  {
     "file": "tasks/BeginnerQuest/templates/intro_frame_top.png",
     "kind": "intro_frame_top",
     "region": [

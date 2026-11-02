@@ -1083,6 +1083,11 @@ class DesktopWindow:
             # 多开摆位与尺寸校准解耦：客户端启动后会自行把窗口挪回屏幕中央，
             # 摆位只挂在「尺寸不对」的分支上会被尺寸已正确的窗口整份跳过
             self._desktop_assert_window_pos(hwnd)
+            if self.config.script.device.screenshot_method == 'macos_window':
+                # Native capture already normalizes the client to screenshot_size;
+                # retain CrossOver's valid viewport instead of fighting its size cap.
+                logger.info('CrossOver: keep native client size; normalize window capture')
+                return False
             if client_w == width and client_h == height:
                 logger.info('Desktop client size already matches target')
                 return False

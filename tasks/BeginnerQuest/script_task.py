@@ -69,6 +69,12 @@ class ScriptTask:
         blockers = ('体力不足', '购买体力', '充值', '再次挑战', '账号登录')
         if any((len(b.ocr_text) <= 16 and any(word in b.ocr_text for word in blockers)) or b.ocr_text == '失败' for b in boxes):
             raise RequestHumanTakeover('BeginnerQuest: resource, login or failed-battle prompt')
+        prepare_button = self.templates(image, {'prepare'})
+        if prepare_button:
+            if self.borrow_seen and self.options.require_verified_team and not self.team_verified:
+                raise RequestHumanTakeover('BeginnerQuest: verify borrowed damage dealer and fire provider before battle')
+            self.battle_pending = False
+            return prepare_button
         if self.battle_pending:
             result = (self.templates(image, {'reward'}) or choose_text(
                 boxes, ('点击屏幕继续', '点击任意位置继续', '领取奖励'),
@@ -134,8 +140,10 @@ class ScriptTask:
         return npc or self.templates(image, {'investigate', 'fight', 'quest', 'reward'})
 
     def scene_is_ready(self, image):
-        return bool(ellipsis_action(image) or self.templates(
-            image, {'talk', 'investigate', 'skip', 'wait_battle', 'dismiss_intro', 'search_scene'}))
+        # Loose ellipsis/skip matches can occur inside promotional movies.
+        return bool(self.templates(image, {'search_scene', 'wait_battle', 'dismiss_intro'})
+                    or (self.templates(image, {'intro_frame_top'})
+                        and self.templates(image, {'intro_frame_bottom'})))
 
     def team_is_verified(self, image):
         return all(self.templates(image, {kind}) is not None
