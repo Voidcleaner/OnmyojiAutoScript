@@ -27,3 +27,5 @@ class Desktop(BaseModel):
 
     macos_capture_url: str = Field(default='http://127.0.0.1:22271', description='macos_capture_url_help')
     macos_capture_token: str = Field(default='', description='macos_capture_token_help')
+
+    macos_host_launch: bool = Field(default=False, description='macos_host_launch_help')

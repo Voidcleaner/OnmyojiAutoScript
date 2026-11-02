@@ -640,7 +640,7 @@ def desktop_game_exe(root) -> str:
 
 
 def desktop_spawn_client(exe: str, root: str, profile=None, timeout: int = 90,
-                         attempt: int = 1, on_bound=None):
+                         attempt: int = 1, on_bound=None, config=None, _launch_locked=False):
     """启动客户端并等其窗口就绪；返回 (bound_pid, spawned_pids)，Popen 失败返回 None。
 
     profile 非空时按档案隔离启动：cwd=档案目录（游戏数据 <cwd>\Documents 独立），
@@ -651,6 +651,27 @@ def desktop_spawn_client(exe: str, root: str, profile=None, timeout: int = 90,
     别人刚出现的窗口绑走——实测 4/4 复现。Job 不可用时退回旧宽松匹配（新出现 +
     exe 归属），单开场景不受影响。
     """
+    settings = getattr(getattr(config, 'script', None), 'desktop', None)
+    host_launch = bool(getattr(settings, 'macos_host_launch', False))
+    if host_launch and not _launch_locked:
+        # Serialize host launches across OAS workers until window binding is done.
+        # A native macOS PID must never be used as a Windows Job/PID.
+        kernel = ctypes.windll.kernel32
+        kernel.CreateMutexW.restype = wintypes.HANDLE
+        mutex = kernel.CreateMutexW(None, False, 'Local\\OASMacOSHostLaunch')
+        if not mutex:
+            raise RuntimeError('Cannot create macOS launch mutex')
+        try:
+            result = kernel.WaitForSingleObject(wintypes.HANDLE(mutex), 120000)
+            if result not in (0, 0x80):
+                raise RuntimeError('Timed out waiting for another macOS launch')
+            try:
+                return desktop_spawn_client(exe, root, profile, timeout, attempt,
+                                            on_bound, config, True)
+            finally:
+                kernel.ReleaseMutex(wintypes.HANDLE(mutex))
+        finally:
+            kernel.CloseHandle(wintypes.HANDLE(mutex))
     before_pids = {w['pid'] for w in list_desktop_windows()}
     logger.info(f'启动桌面客户端（第 {attempt} 轮）: {exe}')
     spawned = set()
@@ -660,14 +681,21 @@ def desktop_spawn_client(exe: str, root: str, profile=None, timeout: int = 90,
     if profile is not None:
         logger.info(f'多开档案隔离启动: cwd={cwd}, USERPROFILE={env["USERPROFILE"]}')
     try:
-        proc = subprocess.Popen([exe], cwd=cwd, env=env,
-                                creationflags=getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0))
-        spawned.add(proc.pid)
+        if host_launch:
+            from module.device.method.macos_capture import launch_window
+            logger.info('Launching desktop client through the macOS host bridge')
+            launch_window(settings.macos_capture_url, settings.macos_capture_token,
+                          settings.window_title)
+            proc = None
+        else:
+            proc = subprocess.Popen([exe], cwd=cwd, env=env,
+                                    creationflags=getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0))
+            spawned.add(proc.pid)
     except Exception as e:
         logger.error(f'启动桌面客户端失败: {e}')
         return None
 
-    job = _desktop_attach_job(proc.pid)
+    job = _desktop_attach_job(proc.pid) if proc is not None else 0
     try:
         deadline = time.time() + timeout
         stable_hwnd = 0
@@ -682,6 +710,9 @@ def desktop_spawn_client(exe: str, root: str, profile=None, timeout: int = 90,
                           if _desktop_pid_under_root(w['pid'], root)
                           and (w['pid'] in job_pids if job_pids
                                else w['pid'] not in before_pids)]
+            if host_launch and len(candidates) > 1:
+                logger.error('Multiple new game windows appeared during host launch; refusing ambiguous binding')
+                return 0, spawned
             if candidates:
                 candidate = candidates[0]
                 if candidate['hwnd'] == stable_hwnd:
@@ -746,7 +777,7 @@ def desktop_launch_instance(config) -> bool:
     # 绑定瞬间（on_bound）就改，与 Device 流程同一时机
     result = desktop_spawn_client(
         exe, root, profile,
-        on_bound=lambda pid, hwnd: desktop_rename_window(hwnd, config))
+        on_bound=lambda pid, hwnd: desktop_rename_window(hwnd, config), config=config)
     if result is None:
         return False
     bound_pid, spawned = result
@@ -1143,7 +1174,7 @@ class DesktopWindow:
 
         for attempt in (1, 2):
             pids = desktop_spawn_client(exe, root, profile, timeout, attempt,
-                                        on_bound=self.desktop_bind_pid)
+                                        on_bound=self.desktop_bind_pid, config=self.config)
             if pids is None:
                 # Popen 本身失败，重试也起不来
                 return False

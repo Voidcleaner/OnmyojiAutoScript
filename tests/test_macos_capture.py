@@ -3,7 +3,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 import numpy as np
-from module.device.method.macos_capture import crop_client, capture_window
+from module.device.method.macos_capture import crop_client, capture_window, launch_window
 
 spec = importlib.util.spec_from_file_location('bridge', Path(__file__).parents[1] / 'deploy/macos/capture_bridge.py')
 bridge = importlib.util.module_from_spec(spec)
@@ -41,6 +41,25 @@ class MacOSCaptureTests(unittest.TestCase):
         get.return_value.raise_for_status.side_effect = RuntimeError('403')
         with self.assertRaises(RuntimeError):
             capture_window('http://127.0.0.1:22271', 'secret', 'one', (100, 50), (100, 50))
+
+    @patch('module.device.method.macos_capture.requests.post')
+    def test_launch_sends_only_configured_title(self, post):
+        post.return_value.json.return_value = {'started': True}
+        launch_window('http://127.0.0.1:22272', 'secret', 'account-1')
+        self.assertEqual(post.call_args.kwargs['json'], {'title': 'account-1'})
+        self.assertEqual(post.call_args.args[0], 'http://127.0.0.1:22272/launch')
+
+    @patch('module.device.method.macos_capture.requests.post')
+    def test_remote_launch_rejected(self, post):
+        with self.assertRaises(ValueError):
+            launch_window('http://example.com', 'secret', 'account-1')
+        post.assert_not_called()
+
+    @patch('module.device.method.macos_capture.requests.post')
+    def test_launch_requires_positive_confirmation(self, post):
+        post.return_value.json.return_value = {'started': False}
+        with self.assertRaises(RuntimeError):
+            launch_window('http://127.0.0.1:22272', 'secret', 'account-1')
 
 
 if __name__ == '__main__':

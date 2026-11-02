@@ -9,4 +9,4 @@ fi
 if [ ! -f .macos-runtime/capture.token ]; then
     python3 -c 'import pathlib,secrets; p=pathlib.Path(".macos-runtime/capture.token"); p.write_text(secrets.token_hex(32)); p.chmod(0o600)'
 fi
-exec python3 deploy/macos/capture_bridge.py --helper .macos-runtime/window-helper --token-file .macos-runtime/capture.token
+exec python3 deploy/macos/capture_bridge.py --helper .macos-runtime/window-helper --token-file .macos-runtime/capture.token "$@"

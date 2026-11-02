@@ -167,5 +167,7 @@
   "macos_capture_url": "macOS 截图桥接地址",
   "macos_capture_url_help": "截图方案选择 macos_window；macOS 主机先启动桥接服务。仅支持 http://127.0.0.1 地址，默认端口 22271。",
   "macos_capture_token": "macOS 截图访问令牌",
-  "macos_capture_token_help": "填写桥接服务 token 文件内容；请勿分享包含此值的配置文件。"
+  "macos_capture_token_help": "填写桥接服务 token 文件内容；请勿分享包含此值的配置文件。",
+  "macos_host_launch": "通过 macOS 主机启动客户端",
+  "macos_host_launch_help": "CrossOver 专用；需启动带 --launch-config 的桥接服务。通过 macOS 的 CrossOver 启动，避免 Wine 内子进程启动问题。"
 }

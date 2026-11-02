@@ -36,3 +36,34 @@ python3 deploy/macos/capture_bridge.py --helper .macos-runtime/window-helper --t
 桥接当前每帧启动一次轻量窗口查询和系统截图，适合先验证兼容性；性能优化可后续加入。启动桥接与 OAS 是两个独立步骤。
 
 测试：在装好项目依赖的 Python 中运行 `python tests/test_macos_capture.py`（项目根目录加入 PYTHONPATH）。
+
+## CrossOver 主机启动与重启
+
+若 Wine 内 `subprocess.Popen` 在重启时不稳定，可启用 `script.desktop.macos_host_launch`。
+在 macOS 桥接启动时增加 `--launch-config /绝对路径/host-launch.json`，并确保 OAS 的桥接地址/端口与服务一致。
+启动脚本支持转发这些参数，例如 `sh deploy/macos/start-capture.sh --launch-config /绝对路径/host-launch.json`。
+
+这个受信任的本地 JSON 文件按唯一窗口标题配置启动路径（不要提交自己的账号配置）：
+
+```json
+{
+  "OAS-YYS-01": {
+    "wine": "/Applications/CrossOver.app/Contents/SharedSupport/CrossOver/bin/wine",
+    "bottle": "yys",
+    "exe": "/Users/example/games/yys/bin/onmyoji.exe",
+    "profile": "/Users/example/oas-profiles/account01",
+    "env": {
+      "USERPROFILE": "Y:\\oas-profiles\\account01\\home",
+      "APPDATA": "Y:\\oas-profiles\\account01\\home\\AppData\\Roaming",
+      "LOCALAPPDATA": "Y:\\oas-profiles\\account01\\home\\AppData\\Local"
+    }
+  }
+}
+```
+
+`exe`、`profile` 是 Mac 的真实路径；`env` 为该容器能访问的 Windows 路径，必须对应同一账号档案。上面的路径仅作示例。
+HTTP 请求只传窗口标题，无法指定任意程序或路径。未配置映射时启动接口关闭。
+启动由 macOS 上 CrossOver 的命令行执行；OAS 等待新窗口，绑定其 Wine PID 并保存档案状态，绝不把 macOS PID 当 Windows PID。
+多个 OAS 工作进程通过命名互斥量串行执行主机启动；同时出现多个未知新窗口时拒绝猜测归属。
+
+已实测第一个实例的关闭、主机重启及新窗口绑定成功。随后通过原有后台消息登录进入4级角色的庭院；低等级缺少式神录等入口，原有登录完成判定仍可能超时，此限制尚未修复。启动阶段短暂黑帧不等于客户端启动失败。

@@ -29,3 +29,15 @@ def capture_window(url, token, title, client_size, target_size):
     response.raise_for_status()
     image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR)
     return crop_client(image, client_size, target_size)
+
+
+def launch_window(url, token, title):
+    endpoint = urlsplit(url)
+    if (endpoint.scheme != 'http' or endpoint.hostname != '127.0.0.1'
+            or endpoint.username or endpoint.password or not token or not title):
+        raise ValueError('macOS launch requires a loopback URL, token and unique title')
+    response = requests.post(url.rstrip('/') + '/launch', json={'title': title},
+                             headers={'Authorization': 'Bearer ' + token}, timeout=15)
+    response.raise_for_status()
+    if response.json().get('started') is not True:
+        raise RuntimeError('macOS host did not confirm launch')
