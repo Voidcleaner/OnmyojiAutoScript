@@ -30,6 +30,12 @@ class SceneSearch:
                 self.direction *= -1
                 self.reversed = True
                 self.unchanged = 0
+        # Animated scenery can keep pixel differences high at an edge. Reserve
+        # the remaining budget for the opposite direction regardless of motion.
+        if not self.reversed and self.count >= (self.limit + 2) // 3:
+            self.direction *= -1
+            self.reversed = True
+            self.unchanged = 0
         if self.count >= self.limit:
             return None
         self.before = self.fingerprint(image)

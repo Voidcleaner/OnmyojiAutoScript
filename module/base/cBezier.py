@@ -30,6 +30,8 @@ class BezierTrajectory:
 
     @classmethod
     def _type(cls, type, x, numberList):
+        if x[0] == x[1]:
+            return np.full(numberList, x[0], dtype=np.float64)
         numberListre = []
         pin = (x[1] - x[0]) / numberList
         if type == 0:
@@ -54,8 +56,10 @@ class BezierTrajectory:
             if pin >= 0:
                 numberListre = numberListre[::-1]
         numberListre = np.abs(np.array(numberListre) - max(numberListre))
-        biaoNumberList = ((numberListre - numberListre[numberListre.argmin()]) / (
-                    numberListre[numberListre.argmax()] - numberListre[numberListre.argmin()])) * (x[1] - x[0]) + x[0]
+        spread = np.ptp(numberListre)
+        if spread == 0:
+            return np.linspace(x[0], x[1], numberList)
+        biaoNumberList = ((numberListre - numberListre.min()) / spread) * (x[1] - x[0]) + x[0]
         biaoNumberList[0] = x[0]
         biaoNumberList[-1] = x[1]
         return biaoNumberList

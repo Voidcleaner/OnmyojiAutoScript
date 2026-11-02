@@ -1,14 +1,51 @@
 [
   {
+    "file": "tasks/BeginnerQuest/templates/courtyard_hud.png",
+    "kind": "search_scene",
+    "region": [
+      1185,
+      0,
+      1265,
+      90
+    ],
+    "threshold": 0.9
+  },
+  {
+    "file": "tasks/BeginnerQuest/templates/unlock_intro.png",
+    "kind": "dismiss_intro",
+    "region": [
+      280,
+      20,
+      460,
+      250
+    ],
+    "threshold": 0.9,
+    "click_point": [
+      1170,
+      90
+    ]
+  },
+  {
+    "file": "tasks/BeginnerQuest/templates/story_fight.png",
+    "kind": "fight",
+    "region": [
+      0,
+      120,
+      1280,
+      620
+    ],
+    "threshold": 0.88
+  },
+  {
     "file": "tasks/BeginnerQuest/templates/story_hud.png",
     "kind": "search_scene",
     "region": [
+      80,
       0,
-      0,
-      160,
+      155,
       90
     ],
-    "threshold": 0.92
+    "threshold": 0.9
   },
   {
     "file": "tasks/BeginnerQuest/templates/yaobikuni_intro.png",

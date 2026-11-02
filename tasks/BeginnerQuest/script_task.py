@@ -8,7 +8,7 @@ import cv2
 from module.exception import RequestHumanTakeover, TaskEnd
 from module.logger import logger
 from module.ocr.models import get_ocr_model
-from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action
+from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action, Action
 
 from tasks.BeginnerQuest.search import SceneSearch, click_point
 
@@ -20,6 +20,7 @@ class ScriptTask:
         self.config, self.device = config, device
         self.options = config.beginner_quest.quest_options
         self.borrow_seen = False
+        self.battle_pending = False
         self.skip_pending = False
         self.team_verified = False
         self.selected_role = None
@@ -52,6 +53,14 @@ class ScriptTask:
         self.search_allowed = bool(self.templates(image, {'search_scene'})) and not any(
             b.ocr_text.strip() and float(b.box[:, 1].mean()) > 130 for b in boxes)
 
+        # A run can stop after opening this modal; explicit skip wording is safe
+        # to resume without the previous process's transient skip_pending flag.
+        confirm_skip = choose_text(boxes, ('确认跳过',), (550, 330, 1000, 550), 'confirm_skip')
+        if confirm_skip:
+            self.skip_pending = False
+            return confirm_skip
+        if any('剧情简介' in b.ocr_text for b in boxes):
+            return None
         if any('个性化内容推荐' in b.ocr_text for b in boxes):
             return choose_text(boxes, ('关闭个性化推荐',), (200, 500, 700, 720), 'dismiss_recommendation')
         if any('借用' in b.ocr_text and ('可以' in b.ocr_text or '解锁' in b.ocr_text) for b in boxes):
@@ -60,6 +69,14 @@ class ScriptTask:
         blockers = ('体力不足', '购买体力', '充值', '再次挑战', '账号登录')
         if any((len(b.ocr_text) <= 16 and any(word in b.ocr_text for word in blockers)) or b.ocr_text == '失败' for b in boxes):
             raise RequestHumanTakeover('BeginnerQuest: resource, login or failed-battle prompt')
+        if self.battle_pending:
+            result = (self.templates(image, {'reward'}) or choose_text(
+                boxes, ('点击屏幕继续', '点击任意位置继续', '领取奖励'),
+                (250, 350, 1250, 720), 'reward'))
+            if result:
+                self.battle_pending = False
+                return result
+            return Action('wait_battle', (0, 0))
         skip = self.templates(image, {'skip', 'skip_movie', 'dismiss_intro'})
         if skip:
             self.skip_pending = skip.name != 'dismiss_intro'
@@ -110,7 +127,8 @@ class ScriptTask:
             action = choose_text(boxes, words, region, name)
             if action:
                 return action
-        return ellipsis_action(image) or self.templates(image, {'talk', 'investigate', 'fight', 'quest', 'reward'})
+        npc = (ellipsis_action(image) or self.templates(image, {'talk'})) if self.templates(image, {'search_scene'}) else None
+        return npc or self.templates(image, {'investigate', 'fight', 'quest', 'reward'})
 
     def scene_is_ready(self, image):
         return bool(ellipsis_action(image) or self.templates(
@@ -127,7 +145,9 @@ class ScriptTask:
         diagnostic.mkdir(parents=True, exist_ok=True)
         state_file = diagnostic / 'state.json'
         if state_file.exists():
-            self.borrow_seen = bool(json.loads(state_file.read_text()).get('borrow_seen', False))
+            state = json.loads(state_file.read_text())
+            self.borrow_seen = bool(state.get('borrow_seen', False))
+            self.battle_pending = bool(state.get('battle_pending', False))
         initial = self.device.screenshot()
         if (getattr(self.device, 'is_desktop', False)
                 and not self.device.find_desktop_login_popup() and self.scene_is_ready(initial)):
@@ -136,8 +156,7 @@ class ScriptTask:
         while count < self.options.max_actions and time.monotonic() - started < self.options.max_seconds:
             image = self.device.screenshot()
             action = self.decide(image)
-            if self.borrow_seen:
-                state_file.write_text(json.dumps({'borrow_seen': True}))
+            state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': self.battle_pending}))
             if not action:
                 if (self.options.search_npc and self.search_allowed
                         and time.monotonic() - last_action > 3):
@@ -168,6 +187,7 @@ class ScriptTask:
             key = (action.name, action.point[0] // 15, action.point[1] // 15)
             repeats = repeats + 1 if key == last_key else 0
             if repeats >= 4:
+                cv2.imwrite(str(diagnostic / 'unrecognized.png'), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
                 raise RequestHumanTakeover('BeginnerQuest: repeated interaction without progress')
             if action.name in ('fight', 'prepare'):
                 if battles >= self.options.max_battles:
@@ -178,6 +198,9 @@ class ScriptTask:
             if self.options.dry_run:
                 break
             self.device.click(*click_point(action.point, self.options.click_jitter), control_check=False, control_name='BeginnerQuest_' + action.name)
+            if action.name == 'prepare':
+                self.battle_pending = True
+                state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': True}))
             self.device.stuck_record_clear()
             count += 1
             last_key, last_action = key, time.monotonic()

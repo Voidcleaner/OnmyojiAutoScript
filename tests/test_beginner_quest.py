@@ -44,6 +44,26 @@ class BeginnerQuestTests(unittest.TestCase):
         self.task.skip_pending=True
         self.assertEqual(self.decide([box('确定')]).name,'confirm_skip')
 
+    def test_explicit_skip_modal_resumes_after_process_restart(self):
+        self.assertEqual(self.decide([box('剧情简介',640,245), box('确认跳过',775,462)]).name,'confirm_skip')
+
+    def test_unreadable_skip_modal_does_not_click_underlying_npc(self):
+        self.assertIsNone(self.decide([box('剧情简介',640,245)]))
+
+    def test_battle_waits_instead_of_clicking_visual_effects(self):
+        self.task.battle_pending = True
+        self.assertEqual(self.decide([]).name, 'wait_battle')
+        self.assertEqual(self.decide([box('点击屏幕继续',640,690)]).name, 'reward')
+        self.assertFalse(self.task.battle_pending)
+
+    def test_constant_drag_axis_does_not_generate_nan(self):
+        from module.base.cBezier import BezierTrajectory
+        with np.errstate(divide='raise', invalid='raise'):
+            for mode in range(4):
+                points = BezierTrajectory._type(mode, (150,150), 10)
+                self.assertTrue(np.all(points == 150))
+            self.assertTrue(np.all(np.isfinite(BezierTrajectory._type(0, (10,20), 1))))
+
     def test_resource_prompt_stops(self):
         with self.assertRaises(RequestHumanTakeover):
             self.decide([box('体力不足')])
@@ -91,6 +111,12 @@ class BeginnerQuestTests(unittest.TestCase):
         self.assertIsNotNone(search.next_drag(self.image))
         self.assertIsNotNone(search.next_drag(self.image + 100))
         self.assertIsNone(search.next_drag(self.image + 200))
+
+    def test_animated_background_cannot_prevent_search_reversal(self):
+        search = SceneSearch(8)
+        drags = [search.next_drag(self.image + i*25) for i in range(4)]
+        self.assertGreater(drags[2][0][0], drags[2][1][0])
+        self.assertLess(drags[3][0][0], drags[3][1][0])
 
     def test_dialogue_blocks_scene_search_even_with_hud(self):
         with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates',side_effect=lambda im,kinds: True if kinds == {'search_scene'} else None):
