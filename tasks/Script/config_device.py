@@ -24,6 +24,7 @@ class ScreenshotMethod(str, Enum):
     DROIDCAST_RAW = 'DroidCast_raw'
     SCRCPY = 'scrcpy'
     WINDOW_BACKGROUND = 'window_background'
+    MACOS_WINDOW = 'macos_window'
     NEMU_IPC = 'nemu_ipc'
 
 class ControlMethod(str, Enum):

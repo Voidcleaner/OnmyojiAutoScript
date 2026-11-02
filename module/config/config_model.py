@@ -419,7 +419,8 @@ class ConfigModel(ConfigBase):
         # 设置参数
         try:
             setattr(group_object, argument, value)
-            logger.info(f'Set arg {self.config_name}.{task}.{group}.{argument}.{value}')
+            logged_value = '***' if argument == 'macos_capture_token' else value
+            logger.info(f'Set arg {self.config_name}.{task}.{group}.{argument}.{logged_value}')
             self.save()  # 我是没有想到什么方法可以使得属性改变自动保存的
             return True
         except ValidationError as e:

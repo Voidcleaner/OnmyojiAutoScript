@@ -127,6 +127,26 @@ class Window(Handle):
             imgSrceen = cv2.resize(imgSrceen, (target_w, target_h))
         return imgSrceen
 
+    def screenshot_macos_window(self):
+        """Capture the bound CrossOver window without activating it."""
+        from module.device.method.macos_capture import capture_window
+        if not getattr(self, 'is_desktop_window', False):
+            raise ScriptError('macos_window requires desktop client mode')
+        with dpi_awareness():
+            rect = GetClientRect(self.screenshot_handle_num)
+        settings = self.config.script.desktop
+        try:
+            return capture_window(settings.macos_capture_url,
+                                  settings.macos_capture_token,
+                                  GetWindowText(self.screenshot_handle_num),
+                                  (rect[2] - rect[0], rect[3] - rect[1]),
+                                  self.screenshot_size)
+        except Exception as exc:
+            raise RequestHumanTakeover(
+                'macOS window capture failed. Check the bridge, screen recording '
+                'permission and unique window title: ' + str(exc)
+            ) from exc
+
     @cached_property
     def control_handle_list(self) -> list:
         """

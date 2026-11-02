@@ -45,6 +45,7 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
             'DroidCast_raw': self.screenshot_droidcast_raw,
             'scrcpy': self.screenshot_scrcpy,
             'window_background': self.screenshot_window_background if IS_WINDOWS else None,
+            'macos_window': self.screenshot_macos_window if IS_WINDOWS else None,
             'nemu_ipc': self.screenshot_nemu_ipc
         }
 

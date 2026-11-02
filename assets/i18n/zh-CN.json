@@ -162,5 +162,10 @@
   "green_mark_type": "绿标匹配方式",
   "green_mark_type_help": "按坐标点击指定绿标，或按式神名OCR 匹配后点击",
   "green_mark_name": "绿标式神名称",
-  "green_mark_name_help": "仅当绿标按式神名匹配时生效，填写目标式神名"
+  "green_mark_name_help": "仅当绿标按式神名匹配时生效，填写目标式神名",
+  "macos_window": "macOS 按窗口截图（CrossOver）",
+  "macos_capture_url": "macOS 截图桥接地址",
+  "macos_capture_url_help": "截图方案选择 macos_window；macOS 主机先启动桥接服务。仅支持 http://127.0.0.1 地址，默认端口 22271。",
+  "macos_capture_token": "macOS 截图访问令牌",
+  "macos_capture_token_help": "填写桥接服务 token 文件内容；请勿分享包含此值的配置文件。"
 }

@@ -67,7 +67,7 @@ class DesktopDevice:
         if self.config.script.device.screenshot_method == 'auto':
             # auto 是「自动选择」的语义，桌面模式自动落到后台截图，无需告警
             self.config.script.device.screenshot_method = 'window_background'
-        elif self.config.script.device.screenshot_method != 'window_background':
+        elif self.config.script.device.screenshot_method not in ('window_background', 'macos_window'):
             logger.warning(
                 f'Desktop mode requires screenshot_method=window_background, '
                 f'current={self.config.script.device.screenshot_method}, overriding'

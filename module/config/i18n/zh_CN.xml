@@ -739,5 +739,8 @@ Refresh：直接刷新，如果刷新操作进入CD，将标记为失败并退�
 	<message><source>Time Of Mystery</source><translation>强制设定出现神秘商店当天的执行时间</translation></message>
 	<message><source>time_of_mystery_help</source><translation>限定[00:00:01-23:30:00],这将使你无视掉调度器的Interval。保持默认'00:00:00'表示不使用</translation></message>
 	<message><source>TakoConfig</source><translation>石距加成</translation></message>
+    <message><source>macos_capture_url_help</source><translation>CrossOver 专用：macOS 截图桥接地址，仅支持 http://127.0.0.1，默认端口 22271。截图方案选择 macos_window。</translation></message>
+    <message><source>macos_capture_token_help</source><translation>macOS 截图桥接访问令牌，与桥接服务的 token 文件一致，请勿分享配置文件。</translation></message>
+    <message><source>macos_window</source><translation>macOS 按窗口截图（CrossOver）</translation></message>
 </context>
 </TS>

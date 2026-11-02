@@ -21,7 +21,9 @@
       "profile_dir": "",
       "window_pos": "",
       "window_title": "",
-      "launch_instance": false
+      "launch_instance": false,
+      "macos_capture_url": "http://127.0.0.1:22271",
+      "macos_capture_token": ""
     },
     "error": {
       "handle_error": true,

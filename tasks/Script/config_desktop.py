@@ -24,3 +24,6 @@ class Desktop(BaseModel):
     window_title: str = Field(default='', description='window_title_help')
     # 一次性按钮：点击后启动本配置对应的客户端实例；执行后自动弹回 false
     launch_instance: bool = Field(default=False, description='launch_instance_help')
+
+    macos_capture_url: str = Field(default='http://127.0.0.1:22271', description='macos_capture_url_help')
+    macos_capture_token: str = Field(default='', description='macos_capture_token_help')
