@@ -60,6 +60,9 @@ class ScriptTask:
         if combat:
             return combat
         boxes = get_ocr_model().detect_and_ocr(image)
+        from tasks.BeginnerQuest.vision import chat_close_action
+        chat=chat_close_action(boxes)
+        if chat:return chat
         modal_text = ''.join(b.ocr_text for b in boxes if 180 < b.box[:,1].mean() < 560)
         if '下载' in modal_text and ('扩展包' in modal_text or '资源后' in modal_text):
             return choose_text(boxes, ('取消',), (300,350,650,550), 'cancel_optional_download')

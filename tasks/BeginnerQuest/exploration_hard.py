@@ -9,6 +9,31 @@ from tasks.Exploration.script_task import ScriptTask as ExplorationTask
 
 class ExplorationHardAdapter(ExplorationTask):
     difficulty="困难"
+    def fire(self, button):
+        from tasks.Exploration.base import Scene
+        from tasks.BeginnerQuest.vision import chat_close_action,exploration_click_point
+        deadline=time.monotonic()+10
+        clicks=0
+        while time.monotonic()<deadline:
+            self.screenshot()
+            action=chat_close_action(get_ocr_model().detect_and_ocr(self.device.image))
+            if action:
+                self.device.click(*action.point,control_check=False,control_name=action.name)
+                time.sleep(.5)
+                continue
+            scene=self.get_current_scene()
+            if scene in (Scene.BATTLE_PREPARE,Scene.BATTLE_FIGHTING):
+                won=self.run_general_battle(self._config.general_battle_config)
+                if won:self.minions_cnt+=1
+                return bool(won)
+            if scene==Scene.MAIN and self.appear(button) and clicks<3:
+                point=exploration_click_point(button.coord())
+                self.device.click(*point,control_check=False,control_name='NOVICE_START_BATTLE')
+                self.device.stuck_record_clear()
+                clicks+=1
+            time.sleep(.7)
+        raise RequestHumanTakeover('Exploration battle entry not confirmed; do not wait on the map indefinitely')
+
     def _reset_search_state(self, reset_swipe_cnt=False):
         super()._reset_search_state(reset_swipe_cnt)
         search=getattr(self,'_novice_scene_search',None)

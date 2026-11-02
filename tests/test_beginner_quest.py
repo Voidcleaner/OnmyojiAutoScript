@@ -68,6 +68,13 @@ class BeginnerQuestTests(unittest.TestCase):
             model.return_value.detect_and_ocr.return_value=[box('31')]
             self.assertIsNone(read_courtyard_story_gate(self.image))
 
+    def test_chat_close_needs_header_and_send_button(self):
+        from tasks.BeginnerQuest.vision import chat_close_action,exploration_click_point
+        self.assertIsNone(chat_close_action([box('2频道',256,62)]))
+        self.assertEqual(chat_close_action([box('2频道',256,62),box('送信',549,678)]).point,(658,398))
+        self.assertEqual(exploration_click_point((646,99)),(646,130))
+        self.assertEqual(exploration_click_point((646,350)),(646,350))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 

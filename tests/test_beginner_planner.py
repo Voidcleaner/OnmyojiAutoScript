@@ -82,6 +82,32 @@ class PlannerTests(unittest.TestCase):
         adapter.config=SimpleNamespace(exploration=SimpleNamespace(exploration_config=SimpleNamespace(auto_rotate=AutoRotate.no)))
         self.assertFalse(adapter.ui_click(adapter.I_E_AUTO_ROTATE_OFF))
 
+    def test_exploration_fire_waits_for_positive_battle_entry(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock,patch
+        from tasks.BeginnerQuest.exploration_hard import ExplorationNormalAdapter
+        from tasks.Exploration.base import Scene
+        task=object.__new__(ExplorationNormalAdapter)
+        task.device=Mock(image=None);task.screenshot=Mock();task.appear=Mock(return_value=True)
+        task.get_current_scene=Mock(side_effect=[Scene.MAIN,Scene.BATTLE_PREPARE])
+        task.run_general_battle=Mock(return_value=True);task.minions_cnt=0
+        task._config=SimpleNamespace(general_battle_config=None)
+        button=Mock();button.coord.return_value=(646,99)
+        with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'):
+            ocr.return_value.detect_and_ocr.return_value=[]
+            self.assertTrue(task.fire(button))
+        task.device.click.assert_called_once_with(646,130,control_check=False,control_name='NOVICE_START_BATTLE')
+        self.assertEqual(task.minions_cnt,1)
+        task.run_general_battle.assert_called_once()
+        from module.exception import RequestHumanTakeover
+        task.get_current_scene=Mock(return_value=Scene.MAIN)
+        task.run_general_battle.reset_mock();task.minions_cnt=0
+        with patch('tasks.BeginnerQuest.exploration_hard.get_ocr_model') as ocr,patch('tasks.BeginnerQuest.exploration_hard.time.sleep'),patch('tasks.BeginnerQuest.exploration_hard.time.monotonic',side_effect=[0,0,11]):
+            ocr.return_value.detect_and_ocr.return_value=[]
+            with self.assertRaises(RequestHumanTakeover):task.fire(button)
+        task.run_general_battle.assert_not_called()
+        self.assertEqual(task.minions_cnt,0)
+
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
 

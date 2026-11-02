@@ -126,3 +126,16 @@ def read_courtyard_story_gate(image):
         if box.score>=.75 and match and 1<=int(match[1])<=60:
             levels.append(int(match[1]))
     return levels[0] if len(levels)==1 else None
+
+
+def chat_close_action(boxes):
+    header=any('频道' in b.ocr_text and b.box[:,0].mean()<550
+               and b.box[:,1].mean()<120 for b in boxes)
+    send=choose_text(boxes,('发送','送信'),(400,600,650,720),'chat_send_anchor')
+    return Action('close_chat',(658,398)) if header and send else None
+
+
+def exploration_click_point(point):
+    # The swords template occupies the upper part of a larger round button.
+    # Its lower half remains clickable beneath the scrolling chat banner.
+    return (point[0],max(130,point[1]))
