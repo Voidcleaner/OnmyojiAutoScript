@@ -134,7 +134,17 @@ class NoviceHub(GameUi):
         return player_level,observation
 
     def open_story_objective(self, chapter):
-        """Enter only the matching live task row, never a guide coordinate."""
+        def matches(description):
+            goal=parse_objective(description)
+            return goal and goal.kind=='story' and goal.target==chapter
+        return self._open_task(matches)
+
+    def open_task_description(self, description):
+        expected=description.replace(' ','')
+        return self._open_task(lambda text:text.replace(' ','')==expected)
+
+    def _open_task(self, matches):
+        """Enter only a matching live task row, never a guide coordinate."""
         self.goto_page(page_main)
         for _ in range(3):
             boxes=self._tap((300,356))
@@ -149,8 +159,7 @@ class NoviceHub(GameUi):
                 if button.ocr_text.strip()!='前往' or not (1030<x<1180 and 220<y<635):continue
                 row=sorted((float(b.box[:,1].mean()),float(b.box[:,0].mean()),b.ocr_text)
                            for b in boxes if 480<b.box[:,0].mean()<910 and abs(b.box[:,1].mean()-y)<45)
-                goal=parse_objective(''.join(t for _,_,t in row))
-                if goal and goal.kind=='story' and goal.target==chapter:
+                if matches(''.join(t for _,_,t in row)):
                     self._tap((int(x),int(y)))
                     return
             if attempt<2:
