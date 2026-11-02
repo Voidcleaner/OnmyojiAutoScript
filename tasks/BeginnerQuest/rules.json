@@ -1,5 +1,27 @@
 [
   {
+    "file": "tasks/BeginnerQuest/templates/intro_frame_top.png",
+    "kind": "intro_frame_top",
+    "region": [
+      1100,
+      0,
+      1280,
+      110
+    ],
+    "threshold": 0.92
+  },
+  {
+    "file": "tasks/BeginnerQuest/templates/intro_frame_bottom.png",
+    "kind": "intro_frame_bottom",
+    "region": [
+      0,
+      600,
+      200,
+      720
+    ],
+    "threshold": 0.92
+  },
+  {
     "file": "tasks/BeginnerQuest/templates/courtyard_hud.png",
     "kind": "search_scene",
     "region": [

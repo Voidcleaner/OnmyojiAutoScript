@@ -77,6 +77,9 @@ class ScriptTask:
                 self.battle_pending = False
                 return result
             return Action('wait_battle', (0, 0))
+        if (self.templates(image, {'intro_frame_top'})
+                and self.templates(image, {'intro_frame_bottom'})):
+            return Action('dismiss_intro', (950, 650))
         skip = self.templates(image, {'skip', 'skip_movie', 'dismiss_intro'})
         if skip:
             self.skip_pending = skip.name != 'dismiss_intro'

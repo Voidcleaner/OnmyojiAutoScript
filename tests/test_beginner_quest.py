@@ -64,6 +64,14 @@ class BeginnerQuestTests(unittest.TestCase):
                 self.assertTrue(np.all(points == 150))
             self.assertTrue(np.all(np.isfinite(BezierTrajectory._type(0, (10,20), 1))))
 
+    def test_character_intro_requires_both_decorative_anchors(self):
+        with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates') as templates:
+            model.return_value.detect_and_ocr.return_value=[]
+            templates.side_effect=lambda im,k: True if k in ({'intro_frame_top'},{'intro_frame_bottom'}) else None
+            self.assertEqual(self.task.decide(self.image).name,'dismiss_intro')
+            templates.side_effect=lambda im,k: True if k == {'intro_frame_top'} else None
+            self.assertIsNone(self.task.decide(self.image))
+
     def test_resource_prompt_stops(self):
         with self.assertRaises(RequestHumanTakeover):
             self.decide([box('体力不足')])
