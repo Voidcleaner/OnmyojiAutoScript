@@ -46,6 +46,13 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
         while count < 2:
             self.goto_page(page_team)
             self.check_zones('经验妖怪')
+            from tasks.Component.GeneralRoom.cooldown import row_cooldown
+            from module.ocr.models import get_ocr_model
+            self.screenshot()
+            cooldown=row_cooldown(get_ocr_model().detect_and_ocr(self.device.image),'经验妖怪')
+            if cooldown:
+                self.progression_outcome={'status':'cooldown','retry_after_seconds':cooldown}
+                self.experience_exit(con,success=False)
             # 开始
             if not self.create_room():
                 self.progression_outcome = 'unavailable'

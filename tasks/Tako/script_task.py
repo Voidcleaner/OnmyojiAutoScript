@@ -52,6 +52,14 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul):
             self.check_zones('喷怒的石距')
         else:
             self.check_zones('石距')
+        from tasks.Component.GeneralRoom.cooldown import row_cooldown
+        from module.ocr.models import get_ocr_model
+        self.screenshot()
+        zone='喷怒的石距' if 5<=self.start_time.weekday()<=6 else '石距'
+        cooldown=row_cooldown(get_ocr_model().detect_and_ocr(self.device.image),zone)
+        if cooldown:
+            self.progression_outcome={'status':'cooldown','retry_after_seconds':cooldown}
+            self.exit_task()
         if not self.create_room():
             self.progression_outcome = 'unavailable'
             self.exit_task()

@@ -61,6 +61,19 @@ class PlannerTests(unittest.TestCase):
         state=Snapshot(30,requirements=[goal],failures={goal.key:'initial'})
         self.assertNotEqual(choose_plan(state).module,'BeginnerQuest')
 
+    def test_party_countdown_is_scoped_to_requested_row(self):
+        import numpy as np
+        from types import SimpleNamespace
+        from tasks.Component.GeneralRoom.cooldown import row_cooldown,parse_countdown
+        def b(text,x,y):
+            return SimpleNamespace(ocr_text=text,score=.99,box=np.array([[x,y],[x,y],[x,y],[x,y]]))
+        boxes=[b('经验妖怪',254,205),b('8时13分',186,180),b('石距',254,424),b('00:51',186,399)]
+        self.assertEqual(row_cooldown(boxes,'经验妖怪'),29580)
+        self.assertEqual(row_cooldown(boxes,'石距'),51)
+        self.assertIsNone(row_cooldown(boxes,'金币妖怪'))
+        self.assertIsNone(parse_countdown('437+'))
+        self.assertEqual(parse_countdown('1小时2分钟3秒'),3723)
+
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
 
