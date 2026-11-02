@@ -93,6 +93,16 @@ class NoviceResourceTests(unittest.TestCase):
         self.assertEqual(run.call_count,1)
         self.assertTrue(run.call_args.kwargs['xp_only'])
 
+    def test_verified_target_stops_even_if_unlock_overlay_hides_stamina(self):
+        import tempfile
+        from pathlib import Path
+        from tasks.BeginnerQuest.leveling import LevelingRunner
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8)),goto_page=Mock(),screenshot=Mock())
+        with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',return_value=31),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=None),patch('tasks.BeginnerQuest.leveling.run_existing') as run:
+            result=LevelingRunner.run_to(task,13,target=31)
+        self.assertEqual(result['status'],'complete')
+        run.assert_not_called()
+
     def test_leveling_reserves_stamina_without_buying_or_starting(self):
         import tempfile
         from pathlib import Path

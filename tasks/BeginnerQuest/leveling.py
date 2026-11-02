@@ -32,8 +32,9 @@ class LevelingRunner(NoviceHub):
             unchanged=unchanged+1 if level is not None and level==previous_level else 0
             previous_level=level
             state={'unchanged_batches':unchanged,'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
-            if level is None or stamina is None:status='unverified_ui'
+            if level is None:status='unverified_ui'
             elif level>=target:status='complete'
+            elif stamina is None:status='unverified_ui'
             elif stamina<min_stamina:status='low_stamina'
             elif unchanged_limit and unchanged>=unchanged_limit:status='replan_needed'
             elif batch>=max_batches:status='batch_limit'
