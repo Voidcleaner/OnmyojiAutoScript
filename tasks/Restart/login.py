@@ -78,6 +78,9 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
             if not self.device.check_screen_size_sample():
                 continue
             self._burst()
+            from tasks.Component.phone_prompt import handle_phone_prompt
+            if handle_phone_prompt(self):
+                continue
             if self.device.is_desktop:
                 from tasks.BeginnerQuest.script_task import ScriptTask as BeginnerTask
                 from module.ocr.models import get_ocr_model

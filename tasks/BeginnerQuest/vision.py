@@ -32,7 +32,7 @@ def choose_text(boxes, words, region, name):
     x1, y1, x2, y2 = region
     for word in words:
         for item in boxes:
-            text = item.ocr_text.replace(' ', '')
+            text = item.ocr_text.replace(' ', '').strip('—-~·•:：。.!！')
             box = item.box
             x, y = np.mean(box, axis=0)
             if item.score >= .75 and text == word and x1 <= x <= x2 and y1 <= y <= y2:
@@ -40,7 +40,7 @@ def choose_text(boxes, words, region, name):
     return None
 
 
-def ellipsis_action(rgb):
+def ellipsis_action(rgb, excluded_regions=()):
     """Find three aligned light dots inside a lit circular NPC marker."""
     gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
     mask = cv2.inRange(gray, 170, 255)
@@ -49,7 +49,9 @@ def ellipsis_action(rgb):
     for i in range(1, n):
         x, y, w, h, area = stats[i]
         if 3 <= w <= 11 and 3 <= h <= 11 and 7 <= area <= 85 and 145 < y < 620:
-            dots.append(centers[i])
+            cx,cy=centers[i]
+            if not any(x1<=cx<=x2 and y1<=cy<=y2 for x1,y1,x2,y2 in excluded_regions):
+                dots.append(centers[i])
     for x, y in dots:
         row = sorted((cx, cy) for cx, cy in dots if abs(cy-y) <= 3 and x-2 <= cx <= x+38)
         if len(row) == 2 and row[0][0] > 1240 and 7 <= row[1][0]-row[0][0] <= 18:

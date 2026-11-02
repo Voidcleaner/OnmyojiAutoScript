@@ -108,6 +108,7 @@ class GameUiAssets:
 
 	# Image Rule Assets
 	# 庭院标志 
+	I_CHECK_BEGINNER_GUIDANCE = RuleImage(roi_front=(32,262,166,22), roi_back=(15,235,265,70), threshold=0.75, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_guidance.png")
 	I_CHECK_BEGINNER_MAIN = RuleImage(roi_front=(1194,9,51,57), roi_back=(1180,0,90,90), threshold=0.86, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_main.png")
 	I_MAIN_GOTO_BEGINNER_EXPLORATION = RuleImage(roi_front=(729,246,32,47), roi_back=(240,100,950,300), threshold=0.75, method="Template matching", file="./tasks/GameUi/page/page_main_goto_beginner_exploration.png")
 	I_CHECK_MAIN = RuleImage(roi_front=(807,108,76,45), roi_back=(49,98,1033,74), threshold=0.95, method="Template matching", file="./tasks/GameUi/page/page_check_main.png")
@@ -130,7 +131,8 @@ class GameUiAssets:
 	# 庭院前往阴阳寮 
 	I_MAIN_GOTO_GUILD = RuleImage(roi_front=(495,590,50,22), roi_back=(495,590,120,100), threshold=0.7, method="Template matching", file="./tasks/GameUi/page/page_main_goto_guild.png")
 	# 庭院前往组队 
-	I_MAIN_GOTO_TEAM = RuleImage(roi_front=(395,590,38,48), roi_back=(395,590,120,100), threshold=0.7, method="Template matching", file="./tasks/GameUi/page/page_main_goto_team.png")
+	I_MAIN_GOTO_BEGINNER_TEAM = RuleImage(roi_front=(369,657,48,28), roi_back=(310,560,180,150), threshold=0.78, method="Template matching", file="./tasks/GameUi/page/page_main_goto_beginner_team.png")
+	I_MAIN_GOTO_TEAM = RuleImage(roi_front=(395,590,38,48), roi_back=(300,560,250,150), threshold=0.7, method="Template matching", file="./tasks/GameUi/page/page_main_goto_team.png")
 	# 庭院前往图鉴 
 	I_MAIN_GOTO_COLLECTION = RuleImage(roi_front=(70,590,36,41), roi_back=(70,590,120,100), threshold=0.7, method="Template matching", file="./tasks/GameUi/page/page_main_goto_collection.png")
 	# 庭院前往珍旅居 
@@ -154,6 +156,7 @@ class GameUiAssets:
 	# 阴阳寮页面标志 
 	I_CHECK_GUILD = RuleImage(roi_front=(1072,630,49,46), roi_back=(1072,630,49,46), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_guild.png")
 	# 组队页面标志 
+	I_CHECK_BEGINNER_TEAM = RuleImage(roi_front=(99,27,65,34), roi_back=(75,10,130,65), threshold=0.85, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_team.png")
 	I_CHECK_TEAM = RuleImage(roi_front=(32,585,82,65), roi_back=(0,563,148,139), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_team.png")
 	# 图鉴页面标志 
 	I_CHECK_COLLECTION = RuleImage(roi_front=(380,620,100,100), roi_back=(371,608,880,112), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_collection.png")

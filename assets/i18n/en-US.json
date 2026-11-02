@@ -11,5 +11,6 @@
   "quest_options": "Quest runner options",
   "search_npc": "Search off-screen NPCs",
   "max_search_swipes": "Maximum search drags",
-  "click_jitter": "Click position variation (pixels)"
+  "click_jitter": "Click position variation (pixels)",
+  "target_player_level": "Target player level"
 }

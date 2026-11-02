@@ -48,7 +48,8 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
             self.check_zones('经验妖怪')
             # 开始
             if not self.create_room():
-                self.experience_exit(con)
+                self.progression_outcome = 'unavailable'
+                self.experience_exit(con, success=False)
             self.ensure_public()
             self.create_ensure()
             # 进入到了房间里面

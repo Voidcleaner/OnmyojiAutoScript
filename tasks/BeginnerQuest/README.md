@@ -38,7 +38,7 @@
 
 ## 配置
 
-`beginner_quest.quest_options` 提供 `max_actions`、`max_seconds`、`idle_seconds`、`max_battles`、`borrow_support`、`preferred_support`、`fire_provider`、`require_verified_team`、`search_npc`、`max_search_swipes`、`click_jitter`、`dry_run`。
+`beginner_quest.quest_options` 提供 `target_player_level`（默认40）、`max_actions`、`max_seconds`、`idle_seconds`、`max_battles`、`borrow_support`、`preferred_support`、`fire_provider`、`require_verified_team`、`search_npc`、`max_search_swipes`、`click_jitter`、`dry_run`。
 `dry_run` 只识别一个可用动作，不发送点击。
 
 测试：项目根目录执行 `python -m unittest discover -s tests -p test_beginner_quest.py`。
@@ -50,3 +50,5 @@
 ## 现有模块复用与40级路线
 
 详见 [任务路线、来源及验证边界](../../docs/newbie-route.md)。`planner.py` 可把实际任务要求转换为 `Orochi`、`Exploration`、`ExperienceYoukai`、`Tako` 的短批次调用；它与剧情识别配合，不把社区攻略当作完成凭据。组队任务须有队友连续停留3–5秒，超时不单人开战；战败会停止该批次，先评估阵容与御魂。40级目标仍在实测推进中，不能宣称已有全程无人值守通关能力。
+
+庭院中会定期读取主角头像等级，达到目标等级结束本轮；剧情中的探查、战斗与任务图标优先于 NPC 三点图标。`novice_hub.py` 可读取缘初手札任务并领取已完成的免费奖励，再交给路线规划器选择后续模块；尚未覆盖的任务会保留待处理。

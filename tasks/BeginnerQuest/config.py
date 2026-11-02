@@ -4,6 +4,7 @@ from tasks.Component.config_scheduler import Scheduler
 
 
 class QuestOptions(BaseModel):
+    target_player_level: int = Field(default=40, ge=1, le=60)
     max_actions: int = Field(default=80, ge=1, le=2000)
     max_seconds: int = Field(default=600, ge=10, le=7200)
     idle_seconds: int = Field(default=30, ge=5, le=120)

@@ -1613,7 +1613,8 @@
       "dry_run": false,
       "search_npc": true,
       "max_search_swipes": 8,
-      "click_jitter": 2
+      "click_jitter": 2,
+      "target_player_level": 40
     }
   }
 }

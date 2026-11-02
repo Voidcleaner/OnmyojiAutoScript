@@ -184,5 +184,6 @@
   "dry_run": "只识别，不点击",
   "search_npc": "搜索屏幕外 NPC",
   "max_search_swipes": "每轮搜索拖动上限",
-  "click_jitter": "点击位置变化（像素）"
+  "click_jitter": "点击位置变化（像素）",
+  "target_player_level": "目标主角等级"
 }

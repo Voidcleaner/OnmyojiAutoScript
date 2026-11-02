@@ -26,6 +26,15 @@ class BeginnerQuestTests(unittest.TestCase):
             model.return_value.detect_and_ocr.return_value=boxes
             return self.task.decide(self.image)
 
+    def test_story_marker_precedes_npc_dot_match(self):
+        from tasks.BeginnerQuest.vision import Action
+        marker = Action('investigate', (640, 180), .99)
+        def template(image, kinds):
+            return marker if kinds == {'investigate', 'fight', 'quest'} else None
+        with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task, 'templates', side_effect=template), patch('tasks.BeginnerQuest.script_task.ellipsis_action', return_value=Action('talk', (707,312), .9)):
+            model.return_value.detect_and_ocr.return_value = []
+            self.assertEqual(self.task.decide(self.image), marker)
+
     def test_three_dots_need_circle(self):
         for x in (388,400,412):
             cv2.circle(self.image,(x,250),4,(240,240,240),-1)
@@ -124,6 +133,21 @@ class BeginnerQuestTests(unittest.TestCase):
         self.assertFalse(self.task.battle_pending)
         self.assertEqual(self.decide([]).name,'wait_battle')
         self.assertTrue(self.task.battle_pending)
+
+    def test_phone_prompt_opens_binding_then_cancels_without_submit(self):
+        from tasks.Component.phone_prompt import PhoneBindingFlow
+        flow=PhoneBindingFlow()
+        self.assertEqual(flow.decide([box('关联手机保护账号',640,300),box('前往绑定',760,460)],now=1).name,'open_phone_binding')
+        self.assertIsNone(flow.decide([box('手机号码',640,300),box('提交',760,460)],now=2))
+        self.assertEqual(flow.decide([box('手机号码',640,300),box('取消',500,460)],now=3).name,'cancel_phone_binding')
+        self.assertIsNone(flow.decide([box('取消',500,460)],now=4))
+
+    def test_npc_detection_can_exclude_courtyard_task_text(self):
+        for x in (108,120,132):
+            cv2.circle(self.image,(x,250),4,(240,240,240),-1)
+        cv2.circle(self.image,(120,250),26,(240,200,120),3)
+        self.assertIsNotNone(ellipsis_action(self.image))
+        self.assertIsNone(ellipsis_action(self.image,((0,145,300,320),)))
 
     def test_resource_prompt_stops(self):
         with self.assertRaises(RequestHumanTakeover):

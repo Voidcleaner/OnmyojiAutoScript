@@ -5,12 +5,13 @@ from time import sleep
 from datetime import time, datetime, timedelta
 
 from module.logger import logger
-from module.exception import TaskEnd
+from module.exception import TaskEnd, RequestHumanTakeover
 from module.base.timer import Timer
 from tasks.Component.GeneralRoom.teammate_gate import TeammateGate
 
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main, page_team, page_shikigami_records
+from tasks.Component.continue_prompt import handle_continue_prompt
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.GeneralRoom.general_room import GeneralRoom
 from tasks.Component.GeneralInvite.general_invite import GeneralInvite
@@ -52,6 +53,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul):
         else:
             self.check_zones('石距')
         if not self.create_room():
+            self.progression_outcome = 'unavailable'
             self.exit_task()
         self.ensure_public()
         self.create_ensure()
@@ -115,12 +117,19 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul):
             if self.appear(self.I_WIN) or self.appear(self.I_REWARD):
                 logger.info('Win battle')
                 self.ui_click_until_disappear(self.I_WIN)
-                while 1:
+                settlement_timer=Timer(25).start()
+                while not settlement_timer.reached():
                     self.screenshot()
-                    if self.appear(self.I_CHECK_MAIN) or self.appear(self.I_CHECK_TEAM):
-                        break
-                    if self.click(self.C_REWARD_2, interval=2):
+                    if handle_continue_prompt(self):
                         continue
+                    if self.match_page_once(page_main) or self.match_page_once(page_team):
+                        return True
+                    if self.appear(self.I_REWARD) or self.appear(self.I_REWARD_GOLD):
+                        self.click(self.C_REWARD_2, interval=2)
+                        continue
+                    if self.close_unknown_pages():
+                        continue
+                raise RequestHumanTakeover('Tako won but settlement page did not close; inspect instead of repeated blind clicks')
                 return True
 
             if self.appear(self.I_FALSE):

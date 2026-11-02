@@ -38,6 +38,17 @@ class PlannerTests(unittest.TestCase):
         state=Snapshot(15,experience_available=True,deferred_modules={'ExperienceYoukai'})
         self.assertNotEqual(choose_plan(state).module,'ExperienceYoukai')
 
+    def test_novice_rows_use_go_buttons_and_exclude_completed_or_paid_rows(self):
+        import numpy as np
+        from types import SimpleNamespace
+        from tasks.BeginnerQuest.novice_hub import observe_tasks
+        def b(text,x,y):
+            return SimpleNamespace(ocr_text=text,score=.99,box=np.array([[x-5,y-5],[x+5,y-5],[x+5,y+5],[x-5,y+5]]))
+        rows=[b('阶段·三',350,298),b('5/9',350,372),b('12/60',275,156),b('完成【主线探索·困难】第五章',700,268),b('前往',1112,268),b('将1个御魂提升至3级',700,362),b('前往',1112,362),b('99解锁',1120,120),b('通关御魂·伍层',700,550),b('已完成',1112,550)]
+        result=observe_tasks(rows)
+        self.assertEqual((result.stage,result.progress,result.handbook_level),(3,(5,9),12))
+        self.assertEqual([(g.kind,g.target) for g in result.objectives],[('exploration_hard',5),('soul_upgrade',3)])
+
     def test_stop_at_40(self):
         self.assertEqual(choose_plan(Snapshot(40,experience_available=True)).module,'Complete')
 

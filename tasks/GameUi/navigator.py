@@ -39,7 +39,12 @@ class GameUi(BaseTask, GameUiAssets):
     REPEATED_TRANSITION_FAILURE_THRESHOLD = 3
 
     # 全局未知页关闭动作，所有任务共享。
+    from tasks.Component.phone_prompt import handle_phone_prompt
+    from tasks.Component.continue_prompt import handle_continue_prompt
+
     DEFAULT_UNKNOWN_CLOSERS = [
+        handle_phone_prompt,
+        handle_continue_prompt,
         GlobalGameAssets.I_UI_CLOSE_CELEBRATION,
         GlobalGameAssets.I_UI_BACK_RED,
         GlobalGameAssets.I_CHAT_CLOSE_BUTTON,

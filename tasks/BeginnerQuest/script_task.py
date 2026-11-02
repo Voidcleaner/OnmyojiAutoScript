@@ -11,6 +11,7 @@ from module.ocr.models import get_ocr_model
 from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action, Action, prepare_is_enabled
 
 from tasks.BeginnerQuest.search import SceneSearch, click_point
+from tasks.Component.phone_prompt import PhoneBindingFlow
 
 ROOT = Path(__file__).parent
 
@@ -25,6 +26,7 @@ class ScriptTask:
         self.skip_pending = False
         self.team_verified = False
         self.selected_role = None
+        self.phone_binding = PhoneBindingFlow()
         self.search_allowed = False
         self.search = SceneSearch(self.options.max_search_swipes)
 
@@ -50,6 +52,9 @@ class ScriptTask:
         if combat:
             return combat
         boxes = get_ocr_model().detect_and_ocr(image)
+        phone_action=self.phone_binding.decide(boxes)
+        if phone_action:
+            return phone_action
         # Positive story HUD plus an empty text area: never pan dialogues or menus.
         self.search_allowed = bool(self.templates(image, {'search_scene'})) and not any(
             b.ocr_text.strip() and float(b.box[:, 1].mean()) > 130 for b in boxes)
@@ -147,7 +152,18 @@ class ScriptTask:
             action = choose_text(boxes, words, region, name)
             if action:
                 return action
-        npc = (ellipsis_action(image) or self.templates(image, {'talk'})) if self.templates(image, {'search_scene'}) else None
+        courtyard = self.templates(image, {'courtyard_scene'})
+        excluded = ((0,145,300,320),(1120,100,1280,600),(0,590,1280,720)) if courtyard else ()
+        if any('初入平安京' in b.ocr_text for b in boxes):
+            return None
+        # Explicit story markers take priority over weaker NPC dot matches.
+        interaction = self.templates(image, {'investigate', 'fight', 'quest'})
+        if interaction:
+            return interaction
+        npc = (self.templates(image, {'courtyard_talk'}) if courtyard else None)
+        npc = npc or ((ellipsis_action(image, excluded) or self.templates(image, {'talk'})) if self.templates(image, {'search_scene'}) else None)
+        if npc and any(x1<=npc.point[0]<=x2 and y1<=npc.point[1]<=y2 for x1,y1,x2,y2 in excluded):
+            npc = None
         return npc or self.templates(image, {'investigate', 'fight', 'quest', 'reward'})
 
     def scene_is_ready(self, image):
@@ -163,6 +179,7 @@ class ScriptTask:
     def run(self):
         started = last_action = time.monotonic()
         last_key, repeats, battles, count = None, 0, 0, 0
+        last_level_check = 0
         diagnostic = Path('log/beginner_quest') / self.config.config_name
         diagnostic.mkdir(parents=True, exist_ok=True)
         state_file = diagnostic / 'state.json'
@@ -178,6 +195,15 @@ class ScriptTask:
         self.device.stuck_record_clear()
         while count < self.options.max_actions and time.monotonic() - started < self.options.max_seconds:
             image = self.device.screenshot()
+            if time.monotonic()-last_level_check>10 and self.templates(image, {'courtyard_scene'}):
+                from tasks.BeginnerQuest.planner import read_player_level
+                level=read_player_level(image)
+                last_level_check=time.monotonic()
+                if level is not None:
+                    logger.info('BeginnerQuest verified player level=%s target=%s',level,self.options.target_player_level)
+                    (diagnostic/'progress.json').write_text(json.dumps({'player_level':level,'target':self.options.target_player_level}))
+                    if level>=self.options.target_player_level:
+                        raise TaskEnd('Verified player-level target reached')
             action = self.decide(image)
             state_file.write_text(json.dumps({'borrow_seen': self.borrow_seen, 'battle_pending': self.battle_pending, 'prepare_clicked': self.prepare_clicked}))
             if not action:

@@ -1,5 +1,27 @@
 [
   {
+    "file": "tasks/BeginnerQuest/templates/npc_courtyard.png",
+    "kind": "courtyard_talk",
+    "region": [
+      300,
+      320,
+      1120,
+      580
+    ],
+    "threshold": 0.84
+  },
+  {
+    "file": "tasks/BeginnerQuest/templates/courtyard_hud.png",
+    "kind": "courtyard_scene",
+    "region": [
+      1185,
+      0,
+      1265,
+      90
+    ],
+    "threshold": 0.9
+  },
+  {
     "file": "tasks/GlobalGame/ui/ui_close_celebration.png",
     "kind": "dismiss_intro",
     "region": [

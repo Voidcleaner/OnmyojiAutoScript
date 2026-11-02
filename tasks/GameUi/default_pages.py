@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
 from tasks.Component.GeneralInvite.assets import GeneralInviteAssets
+from tasks.Component.GeneralRoom.assets import GeneralRoomAssets
+from tasks.Component.phone_prompt import handle_phone_prompt
 from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
 from tasks.Exploration.assets import ExplorationAssets
 from tasks.GameUi.action import conditional_action, sequence
@@ -59,8 +61,10 @@ page_login = Page(SwitchAccountAssets.I_CHECK_LOGIN_FORM, category="global")
 page_login.add_enter_success_hooks(handle_login_page)
 
 # 庭院主页(此处通过提高阈值来处理部分探索章节会识别成原始庭院的问题, 后续有其他更好方法需改善)
-page_main = Page(any_of(GameUiAssets.I_CHECK_MAIN, all_of(GameUiAssets.I_CHECK_BEGINNER_MAIN, GameUiAssets.I_MAIN_GOTO_BEGINNER_EXPLORATION)), category="global")
+page_main = Page(any_of(GameUiAssets.I_CHECK_MAIN, all_of(GameUiAssets.I_CHECK_BEGINNER_MAIN, GameUiAssets.I_CHECK_BEGINNER_GUIDANCE)), category="global")
 page_main.add_enter_success_hooks(
+    GlobalGameAssets.I_UI_CLOSE_CELEBRATION,
+    handle_phone_prompt,
     GameUiAssets.I_AD_CLOSE_RED, GlobalGameAssets.I_UI_BACK_RED, GlobalGameAssets.I_UI_CANCEL_SAMLL,
     conditional_action(RestartAssets.I_LOGIN_COURTYARD, RestartAssets.C_LOGIN_SCROLL_CLOSE_AREA),
 )
@@ -131,11 +135,15 @@ page_shirin = Page(GameUiAssets.I_CHECK_SHRIN, category="global")
 page_guild.connect(page_shirin, GameUiAssets.I_GUILD_TO_SHRIN, key="page_guild->page_shirin")
 page_shirin.connect(page_guild, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_shirin->page_guild")
 
-page_team = Page(GameUiAssets.I_CHECK_TEAM, category="global")
+page_team = Page(any_of(GameUiAssets.I_CHECK_TEAM, all_of(GameUiAssets.I_CHECK_BEGINNER_TEAM, GeneralRoomAssets.I_CREATE_ROOM)), category="global")
 page_team.add_enter_failure_hooks(conditional_action(condition=page_main.recognizer,
                                                      action=RestartAssets.C_LOGIN_SCROLL_CLOSE_AREA))
 page_team.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_team->page_main")
-page_main.connect(page_team, GameUiAssets.I_MAIN_GOTO_TEAM, key="page_main->page_team")
+def enter_team(task):
+    return (task.appear_then_click(GameUiAssets.I_MAIN_GOTO_TEAM)
+            or task.appear_then_click(GameUiAssets.I_MAIN_GOTO_BEGINNER_TEAM))
+
+page_main.connect(page_team, enter_team, key="page_main->page_team")
 
 page_collection = Page(GameUiAssets.I_CHECK_COLLECTION, category="global")
 page_collection.add_enter_success_hooks(GlobalGameAssets.I_UI_CANCEL_SAMLL)
@@ -220,8 +228,13 @@ page_exploration = Page(GameUiAssets.I_CHECK_EXPLORATION, category="global")
 page_exploration.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_exploration->page_main")
 page_exploration.add_enter_failure_hooks(ExplorationAssets.I_E_OPEN_FOLDER)
 def enter_exploration(task):
-    return (task.appear_then_click(GameUiAssets.I_MAIN_GOTO_EXPLORATION)
-            or task.appear_then_click(GameUiAssets.I_MAIN_GOTO_BEGINNER_EXPLORATION))
+    if (task.appear_then_click(GameUiAssets.I_MAIN_GOTO_EXPLORATION)
+            or task.appear_then_click(GameUiAssets.I_MAIN_GOTO_BEGINNER_EXPLORATION)):
+        return True
+    if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE):
+        task.device.click(745,260,control_check=False,control_name='BEGINNER_EXPLORE')
+        return True
+    return False
 
 page_main.connect(page_exploration, enter_exploration, key="page_main->page_exploration")
 
