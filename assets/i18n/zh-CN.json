@@ -169,5 +169,17 @@
   "macos_capture_token": "macOS 截图访问令牌",
   "macos_capture_token_help": "填写桥接服务 token 文件内容；请勿分享包含此值的配置文件。",
   "macos_host_launch": "通过 macOS 主机启动客户端",
-  "macos_host_launch_help": "CrossOver 专用；需启动带 --launch-config 的桥接服务。通过 macOS 的 CrossOver 启动，避免 Wine 内子进程启动问题。"
+  "macos_host_launch_help": "CrossOver 专用；需启动带 --launch-config 的桥接服务。通过 macOS 的 CrossOver 启动，避免 Wine 内子进程启动问题。",
+  "BeginnerQuest": "新手主线任务",
+  "beginner_quest": "新手主线任务",
+  "quest_options": "新手推进设置",
+  "max_actions": "单次动作上限",
+  "max_seconds": "运行时长上限（秒）",
+  "idle_seconds": "未知画面等待（秒）",
+  "max_battles": "战斗动作上限",
+  "borrow_support": "提示借用时自动借用",
+  "preferred_support": "优先借用的输出式神",
+  "fire_provider": "打火式神",
+  "require_verified_team": "借用后确认队伍再战斗",
+  "dry_run": "只识别，不点击"
 }

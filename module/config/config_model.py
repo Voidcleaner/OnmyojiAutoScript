@@ -15,6 +15,7 @@ from module.logger import logger
 
 # 导入配置的Python文件
 from tasks.Component.config_base import ConfigBase, TimeDelta
+from tasks.BeginnerQuest.config import BeginnerQuest
 from tasks.Exploration.config import Exploration
 from tasks.RyouToppa.config import RyouToppa
 from tasks.Dokan.config import Dokan
@@ -88,6 +89,7 @@ class ConfigModel(ConfigBase):
     running_task: str = ''
     script: Script = Field(default_factory=Script)
     restart: Restart = Field(default_factory=Restart)
+    beginner_quest: BeginnerQuest = Field(default_factory=BeginnerQuest)
     global_game: GlobalGame = Field(default_factory=GlobalGame)
 
     # 这些是每日任务的

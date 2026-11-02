@@ -686,6 +686,14 @@ class Script:
             # 注意：不能只靠 task_call('Restart') 排队，因为 get_next_task 按 next_run 取最早
             # 到期的任务，Exploration 等的 next_run 是 2023 永远更优先，Restart 永远排不上去，
             # 所以这里直接把 task 改写成 Restart 并落进下方 Run 分支执行。
+            if (task == 'BeginnerQuest' and getattr(self.device, 'is_desktop', False)
+                    and not self.device.app_is_running()
+                    and not self.device.find_desktop_login_popup()):
+                from tasks.BeginnerQuest.script_task import ScriptTask as BeginnerTask
+                if BeginnerTask(self.config, self.device).scene_is_ready(self.device.screenshot()):
+                    self.device.desktop_mark_logged_in()
+                    logger.info('BeginnerQuest recognized an in-game story scene; skip mature-account login checks')
+
             if task != 'Restart' and getattr(self.device, 'is_desktop', False) \
                     and not self.device.app_is_running():
                 logger.info('Desktop client not logged in, run `Restart` to login first')

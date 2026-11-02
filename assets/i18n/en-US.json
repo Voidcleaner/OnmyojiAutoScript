@@ -5,5 +5,8 @@
   "macos_capture_token": "macOS capture token",
   "macos_capture_token_help": "Use the bridge token file content. Do not share account config files.",
   "macos_host_launch": "Launch client through macOS host",
-  "macos_host_launch_help": "CrossOver only. Requires a host bridge with a trusted --launch-config map."
+  "macos_host_launch_help": "CrossOver only. Requires a host bridge with a trusted --launch-config map.",
+  "BeginnerQuest": "Beginner story quests",
+  "beginner_quest": "Beginner story quests",
+  "quest_options": "Quest runner options"
 }

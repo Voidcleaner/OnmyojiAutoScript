@@ -1589,5 +1589,28 @@
       "group_name": "",
       "team_name": ""
     }
+  },
+  "beginner_quest": {
+    "scheduler": {
+      "enable": false,
+      "next_run": "2023-01-01 00:00:00",
+      "priority": 5,
+      "success_interval": "01 00:00:00",
+      "failure_interval": "01 00:00:00",
+      "server_update": "09:00:00",
+      "delay_date": 1,
+      "float_time": "00:00:00"
+    },
+    "quest_options": {
+      "max_actions": 80,
+      "max_seconds": 600,
+      "idle_seconds": 30,
+      "max_battles": 10,
+      "borrow_support": true,
+      "preferred_support": "待宵姑获鸟,姑获鸟,麓铭大岳丸",
+      "fire_provider": "座敷童子",
+      "require_verified_team": true,
+      "dry_run": false
+    }
   }
 }
