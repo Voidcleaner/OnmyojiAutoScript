@@ -8,5 +8,8 @@
   "macos_host_launch_help": "CrossOver only. Requires a host bridge with a trusted --launch-config map.",
   "BeginnerQuest": "Beginner story quests",
   "beginner_quest": "Beginner story quests",
-  "quest_options": "Quest runner options"
+  "quest_options": "Quest runner options",
+  "search_npc": "Search off-screen NPCs",
+  "max_search_swipes": "Maximum search drags",
+  "click_jitter": "Click position variation (pixels)"
 }

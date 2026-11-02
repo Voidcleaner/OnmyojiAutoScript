@@ -181,5 +181,8 @@
   "preferred_support": "优先借用的输出式神",
   "fire_provider": "打火式神",
   "require_verified_team": "借用后确认队伍再战斗",
-  "dry_run": "只识别，不点击"
+  "dry_run": "只识别，不点击",
+  "search_npc": "搜索屏幕外 NPC",
+  "max_search_swipes": "每轮搜索拖动上限",
+  "click_jitter": "点击位置变化（像素）"
 }

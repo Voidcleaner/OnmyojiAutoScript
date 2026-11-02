@@ -1,5 +1,6 @@
 """Bounded, visual-only beginner story runner. Unknown screens stop safely."""
 import json
+import random
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -8,6 +9,8 @@ from module.exception import RequestHumanTakeover, TaskEnd
 from module.logger import logger
 from module.ocr.models import get_ocr_model
 from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action
+
+from tasks.BeginnerQuest.search import SceneSearch, click_point
 
 ROOT = Path(__file__).parent
 
@@ -20,6 +23,8 @@ class ScriptTask:
         self.skip_pending = False
         self.team_verified = False
         self.selected_role = None
+        self.search_allowed = False
+        self.search = SceneSearch(self.options.max_search_swipes)
 
     def templates(self, image, kinds):
         for rule in json.loads((ROOT / 'rules.json').read_text(encoding='utf-8')):
@@ -34,6 +39,7 @@ class ScriptTask:
         return None
 
     def decide(self, image):
+        self.search_allowed = False
         movie = movie_skip_action(image)
         if movie:
             self.skip_pending = True
@@ -42,6 +48,10 @@ class ScriptTask:
         if combat:
             return combat
         boxes = get_ocr_model().detect_and_ocr(image)
+        # Positive story HUD plus an empty text area: never pan dialogues or menus.
+        self.search_allowed = bool(self.templates(image, {'search_scene'})) and not any(
+            b.ocr_text.strip() and float(b.box[:, 1].mean()) > 130 for b in boxes)
+
         if any('个性化内容推荐' in b.ocr_text for b in boxes):
             return choose_text(boxes, ('关闭个性化推荐',), (200, 500, 700, 720), 'dismiss_recommendation')
         if any('借用' in b.ocr_text and ('可以' in b.ocr_text or '解锁' in b.ocr_text) for b in boxes):
@@ -104,7 +114,7 @@ class ScriptTask:
 
     def scene_is_ready(self, image):
         return bool(ellipsis_action(image) or self.templates(
-            image, {'talk', 'investigate', 'skip', 'wait_battle', 'dismiss_intro'}))
+            image, {'talk', 'investigate', 'skip', 'wait_battle', 'dismiss_intro', 'search_scene'}))
 
     def team_is_verified(self, image):
         return all(self.templates(image, {kind}) is not None
@@ -129,6 +139,21 @@ class ScriptTask:
             if self.borrow_seen:
                 state_file.write_text(json.dumps({'borrow_seen': True}))
             if not action:
+                if (self.options.search_npc and self.search_allowed
+                        and time.monotonic() - last_action > 3):
+                    drag = self.search.next_drag(image)
+                    if drag is None:
+                        cv2.imwrite(str(diagnostic / 'unrecognized.png'), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+                        raise RequestHumanTakeover('BeginnerQuest: bounded NPC search exhausted')
+                    logger.info('BeginnerQuest search %s/%s: %s', self.search.count, self.search.limit, drag)
+                    if self.options.dry_run:
+                        break
+                    self.device.swipe(*drag, control_name='BeginnerQuest_search')
+                    self.device.stuck_record_clear()
+                    count += 1
+                    last_action = time.monotonic()
+                    time.sleep(random.uniform(1.2, 1.8))
+                    continue
                 if time.monotonic() - last_action > self.options.idle_seconds:
                     cv2.imwrite(str(diagnostic / 'unrecognized.png'), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
                     raise RequestHumanTakeover('BeginnerQuest: no recognized interaction; saved unrecognized.png')
@@ -139,6 +164,7 @@ class ScriptTask:
                 self.device.stuck_record_clear()
                 time.sleep(2)
                 continue
+            self.search.reset()
             key = (action.name, action.point[0] // 15, action.point[1] // 15)
             repeats = repeats + 1 if key == last_key else 0
             if repeats >= 4:
@@ -151,11 +177,11 @@ class ScriptTask:
                         action.name, action.point, action.score)
             if self.options.dry_run:
                 break
-            self.device.click(*action.point, control_check=False, control_name='BeginnerQuest_' + action.name)
+            self.device.click(*click_point(action.point, self.options.click_jitter), control_check=False, control_name='BeginnerQuest_' + action.name)
             self.device.stuck_record_clear()
             count += 1
             last_key, last_action = key, time.monotonic()
-            time.sleep(1)
+            time.sleep(random.uniform(.9, 1.5))
         self.config.beginner_quest.scheduler.next_run = datetime.now() + timedelta(hours=1)
         self.config.save()
         raise TaskEnd('BeginnerQuest bounded run finished; story completion is not asserted')

@@ -12,6 +12,9 @@ class QuestOptions(BaseModel):
     preferred_support: str = '待宵姑获鸟,姑获鸟,麓铭大岳丸'
     fire_provider: str = '座敷童子'
     require_verified_team: bool = True
+    search_npc: bool = True
+    max_search_swipes: int = Field(default=8, ge=1, le=20)
+    click_jitter: int = Field(default=2, ge=0, le=4)
     dry_run: bool = False
 
 

@@ -1,5 +1,16 @@
 [
   {
+    "file": "tasks/BeginnerQuest/templates/story_hud.png",
+    "kind": "search_scene",
+    "region": [
+      0,
+      0,
+      160,
+      90
+    ],
+    "threshold": 0.92
+  },
+  {
     "file": "tasks/BeginnerQuest/templates/yaobikuni_intro.png",
     "kind": "dismiss_intro",
     "region": [

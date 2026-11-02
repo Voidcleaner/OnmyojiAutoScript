@@ -7,6 +7,8 @@ from tasks.BeginnerQuest.vision import ellipsis_action, choose_text, template_ac
 from tasks.BeginnerQuest.script_task import ScriptTask
 from tasks.BeginnerQuest.config import QuestOptions
 from module.exception import RequestHumanTakeover
+from tasks.BeginnerQuest.search import SceneSearch, click_point
+import random
 
 
 def box(text, x=800, y=550, score=.99):
@@ -76,6 +78,35 @@ class BeginnerQuestTests(unittest.TestCase):
 
     def test_new_feature_popup_can_be_closed(self):
         self.assertEqual(self.decide([box('点击空白处关闭',640,680)]).name,'continue')
+
+    def test_search_reverses_after_two_unchanged_drags_then_stops(self):
+        search = SceneSearch(8)
+        drags = [search.next_drag(self.image) for _ in range(5)]
+        self.assertGreater(drags[0][0][0], drags[0][1][0])
+        self.assertLess(drags[2][0][0], drags[2][1][0])
+        self.assertIsNone(drags[4])
+
+    def test_search_limit_even_when_scene_keeps_moving(self):
+        search = SceneSearch(2)
+        self.assertIsNotNone(search.next_drag(self.image))
+        self.assertIsNotNone(search.next_drag(self.image + 100))
+        self.assertIsNone(search.next_drag(self.image + 200))
+
+    def test_dialogue_blocks_scene_search_even_with_hud(self):
+        with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates',side_effect=lambda im,kinds: True if kinds == {'search_scene'} else None):
+            model.return_value.detect_and_ocr.return_value=[box('剧情对话',640,600)]
+            self.task.decide(self.image)
+            self.assertFalse(self.task.search_allowed)
+            model.return_value.detect_and_ocr.return_value=[]
+            self.task.decide(self.image)
+            self.assertTrue(self.task.search_allowed)
+
+    def test_click_variation_stays_near_target_and_inside_screen(self):
+        rng = random.Random(7)
+        points = [click_point((500,400),2,rng) for _ in range(20)]
+        self.assertGreater(len(set(points)), 1)
+        self.assertTrue(all(abs(x-500)<=2 and abs(y-400)<=2 for x,y in points))
+        self.assertEqual(click_point((1279,719),0),(1278,718))
 
 
 if __name__=='__main__':

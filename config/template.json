@@ -1610,7 +1610,10 @@
       "preferred_support": "待宵姑获鸟,姑获鸟,麓铭大岳丸",
       "fire_provider": "座敷童子",
       "require_verified_team": true,
-      "dry_run": false
+      "dry_run": false,
+      "search_npc": true,
+      "max_search_swipes": 8,
+      "click_jitter": 2
     }
   }
 }

@@ -13,6 +13,12 @@
 
 规则采用 `rules.json` 的模板＋区域＋阈值和 OCR 按钮白名单。只对已识别的对象操作；不会把顶部滚动聊天中的关键词当作任务按钮。
 
+## 屏幕外 NPC 搜索
+
+参考困难探索的背景拖动与画面变化比较：未发现交互目标、已确认剧情场景 HUD 且场景中没有对话/菜单文字时，等待3秒后按住背景向左拖动查找。每次移动后重新识别 NPC、探查和战斗图标；目标优先于继续搜索。连续两次背景无明显位移时反向，再遇边界或达到 `max_search_swipes` 后保存现场并停止。未知界面不拖动。
+
+默认 `search_npc=true`、每轮最多8次拖动，搜索也计入任务动作和总时长上限。拖动路径在探索背景安全区域小幅变化；点击中心默认±2像素（可设0关闭），动作后等待0.9—1.5秒。这些变化用于界面容差和动画等待，不能保证避免游戏账号处罚。当前 HUD 模板针对已实测的新手剧情场景，其他场景需要补充准确的 `search_scene` 规则。
+
 ## 借用与队伍：仍待实际界面校准
 
 遇到借用提示会记录借用流程，并尝试点击明确的“前往借用/借用式神/借用”，按 `preferred_support` 优先选择待宵姑获鸟（SP鸟）；之后优先 `fire_provider`（默认座敷童子）。
@@ -32,7 +38,7 @@
 
 ## 配置
 
-`beginner_quest.quest_options` 提供 `max_actions`、`max_seconds`、`idle_seconds`、`max_battles`、`borrow_support`、`preferred_support`、`fire_provider`、`require_verified_team`、`dry_run`。
+`beginner_quest.quest_options` 提供 `max_actions`、`max_seconds`、`idle_seconds`、`max_battles`、`borrow_support`、`preferred_support`、`fire_provider`、`require_verified_team`、`search_npc`、`max_search_swipes`、`click_jitter`、`dry_run`。
 `dry_run` 只识别一个可用动作，不发送点击。
 
 测试：项目根目录执行 `python -m unittest discover -s tests -p test_beginner_quest.py`。
