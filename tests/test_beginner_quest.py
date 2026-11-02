@@ -80,6 +80,11 @@ class BeginnerQuestTests(unittest.TestCase):
         self.assertEqual(action.name,'continue')
         self.assertEqual(action.point,(720,685))
 
+    def test_mid_panel_continue_prompt(self):
+        action=self.decide([box('点击任意位置继续',638,475)])
+        self.assertEqual(action.name,'continue')
+        self.assertEqual(action.point,(638,475))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 

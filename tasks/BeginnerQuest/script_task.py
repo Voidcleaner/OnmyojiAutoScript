@@ -161,7 +161,7 @@ class ScriptTask:
                 raise RequestHumanTakeover('BeginnerQuest: verify borrowed damage dealer and fire provider before battle')
             return ready
         for words, region, name in [
-            (('点击屏幕继续', '点击任意位置继续', '点击空白处关闭','点击任意位置关闭'), (250, 500, 1200, 720), 'continue'),
+            (('点击屏幕继续', '点击任意位置继续', '点击空白处关闭','点击任意位置关闭'), (250, 400, 1200, 720), 'continue'),
             (('探查', '调查'), (100, 120, 1200, 650), 'investigate'),
             (('领取', '领取奖励'), (450, 350, 1150, 700), 'reward'),
         ]:

@@ -69,7 +69,7 @@ class NoviceHub(GameUi):
         if '获得奖励' in words:
             self._tap((1100,600))
             return True
-        action=choose_text(boxes,('点击屏幕继续','点击空白处关闭','点击任意位置关闭','点击任意位置继续'),(200,500,1250,720),'continue')
+        action=choose_text(boxes,('点击屏幕继续','点击空白处关闭','点击任意位置关闭','点击任意位置继续'),(200,400,1250,720),'continue')
         if action:
             self._tap(action.point)
             return True
