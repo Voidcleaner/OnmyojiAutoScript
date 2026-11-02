@@ -270,23 +270,30 @@ class Window(Handle):
             from win32api import GetCursorPos, SetCursorPos
             from win32gui import ClientToScreen, SendMessageTimeout
             from win32con import SMTO_ABORTIFHUNG
+            import pywintypes
             previous = GetCursorPos()
             pressed = False
             try:
                 SetCursorPos(ClientToScreen(hwnd, self.desktop_message_coord(x, y)))
                 SendMessageTimeout(hwnd, WM_MOUSEMOVE, 0, lparam, SMTO_ABORTIFHUNG, 1000)
+                pressed = True  # DOWN may be delivered even when acknowledgement times out.
                 SendMessageTimeout(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lparam, SMTO_ABORTIFHUNG, 1000)
-                pressed = True
                 time.sleep(max(press_time, .12))
                 SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, lparam, SMTO_ABORTIFHUNG, 1000)
                 pressed = False
                 time.sleep(.12)  # Allow a background render/input tick before restoring.
+            except pywintypes.error as exc:
+                if exc.winerror != 1460:
+                    raise
+                # Do not replay DOWN: the client may already have accepted it.
+                # The task must inspect its next screenshot to verify progress.
+                logger.warning('CrossOver click acknowledgement timed out; release mouse and verify next frame')
             finally:
                 if pressed:
                     try:
                         SendMessageTimeout(hwnd, WM_LBUTTONUP, 0, lparam, SMTO_ABORTIFHUNG, 1000)
                     except Exception:
-                        pass
+                        PostMessage(hwnd, WM_LBUTTONUP, 0, lparam)
                 SetCursorPos(previous)
             self._desktop_cursor = (int(x), int(y))
             return
@@ -422,7 +429,7 @@ class Window(Handle):
         end_lparam = MAKELONG(trace[-1][0], trace[-1][1])
         PostMessage(handleNum, WM_LBUTTONUP, 0, end_lparam)
 
-    def swipe_desktop_window_message(self, startPos: list, endPos: list) -> None:
+    def swipe_desktop_window_message(self, startPos: list, endPos: list, hold_time: float = .15) -> None:
         """桌面客户端后台滑动：与模拟器同一套拟人轨迹，坐标换算到消息空间后逐点投递。"""
         self.desktop_window_restore_if_minimized()
         hwnd = self.root_handle_num
@@ -441,9 +448,9 @@ class Window(Handle):
             try:
                 move(startPos)
                 start = MAKELONG(*self.desktop_message_coord(*startPos))
-                SendMessageTimeout(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, start, SMTO_ABORTIFHUNG, 1000)
                 pressed = True
-                time.sleep(.15)
+                SendMessageTimeout(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, start, SMTO_ABORTIFHUNG, 1000)
+                time.sleep(max(.15,min(float(hold_time),2.0)))
                 for point in trace[::max(1, len(trace)//20)]:
                     move(point, MK_LBUTTON)
                     time.sleep(.025)

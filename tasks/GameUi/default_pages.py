@@ -403,3 +403,31 @@ page_battle_team = Page(any_of(GeneralInviteAssets.I_GI_EMOJI_1, GeneralInviteAs
                         category="global", priority=25)
 page_battle_team_exit.connect(page_battle_team, GlobalGameAssets.I_UI_CANCEL, key="page_battle_team_exit->page_battle_team")
 page_battle_team.connect(page_battle_team_exit, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_battle_team->page_battle_team_exit")
+
+
+# New-player borrowing pages have distinct headers; recognize them before
+# broad battle/realm markers that can also occur on the borrowed cards.
+page_beginner_journey=Page(GameUiAssets.I_CHECK_BEGINNER_JOURNEY,category='global',priority=90)
+page_beginner_borrow=Page(GameUiAssets.I_CHECK_BEGINNER_BORROW,category='global',priority=90)
+page_beginner_journey.connect(page_main,GlobalGameAssets.I_UI_BACK_YELLOW,key='page_beginner_journey->page_main')
+page_beginner_borrow.connect(page_beginner_journey,GlobalGameAssets.I_UI_BACK_YELLOW,key='page_beginner_borrow->page_beginner_journey')
+
+def enter_beginner_journey(task):
+    from module.ocr.models import get_ocr_model
+    from tasks.BeginnerQuest.vision import choose_text
+    action=choose_text(get_ocr_model().detect_and_ocr(task.device.image),('珍旅居',),(140,580,350,710),'OPEN_BEGINNER_JOURNEY')
+    if action:
+        task.device.click(*action.point,control_check=False,control_name=action.name)
+        return True
+    return task.click(RestartAssets.C_LOGIN_SCROLL_CLOSE_AREA,interval=1)
+
+def enter_beginner_borrow(task):
+    from module.ocr.models import get_ocr_model
+    from tasks.BeginnerQuest.vision import choose_text
+    action=choose_text(get_ocr_model().detect_and_ocr(task.device.image),('唤妖借处',),(900,200,1200,450),'OPEN_BEGINNER_BORROW')
+    if not action:return False
+    task.device.click(*action.point,control_check=False,control_name=action.name)
+    return True
+
+page_main.connect(page_beginner_journey,enter_beginner_journey,key='page_main->page_beginner_journey')
+page_beginner_journey.connect(page_beginner_borrow,enter_beginner_borrow,key='page_beginner_journey->page_beginner_borrow')

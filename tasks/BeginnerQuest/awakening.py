@@ -1,5 +1,6 @@
 """Short novice soul/awakening batches using OAS navigation and battle handling."""
 import re
+import json
 import time
 from pathlib import Path
 import cv2
@@ -14,6 +15,8 @@ from tasks.GameUi.page import page_awake_zones,page_main
 
 
 class AwakeningAdapter(GameUi,GeneralBattle):
+    objective_kind="awakening"
+    max_layer=5
     zone_page=page_awake_zones
     zone_point=(200,300)
     menu_title="觉醒材料"
@@ -26,9 +29,18 @@ class AwakeningAdapter(GameUi,GeneralBattle):
         time.sleep(1)
         return self._read()
 
-    def run_to(self,target=5):
-        if not 1<=target<=5:
-            raise ValueError('Only novice awakening layers 1-5 are calibrated')
+    def on_battle_failed(self):
+        self.failed_layers[f'{self.objective_kind}:{self.current_layer}']=self.build_revision
+        self.failure_file.parent.mkdir(parents=True,exist_ok=True)
+        self.failure_file.write_text(json.dumps(self.failed_layers),encoding='utf-8')
+        raise RequestHumanTakeover('Novice layer lost; failure recorded before dismissal, improve formation before retry')
+
+    def run_to(self,target=5,build_revision='initial'):
+        if not 1<=target<=self.max_layer:
+            raise ValueError('Target layer exceeds calibrated novice range')
+        self.build_revision=build_revision
+        self.failure_file=Path('log/beginner_quest')/self.config.config_name/'failures.json'
+        self.failed_layers=json.loads(self.failure_file.read_text()) if self.failure_file.exists() else {}
         self.goto_page(self.zone_page)
         boxes=self._tap(self.zone_point) if self.zone_point else self._read()
         lock=cv2.imread(str(Path(__file__).parent/'templates/awakening_lock.png'))
@@ -49,6 +61,9 @@ class AwakeningAdapter(GameUi,GeneralBattle):
             if not rows:raise RequestHumanTakeover('No verified unlocked awakening layer in view')
             layer,point=max(rows)
             if layer in completed:raise RequestHumanTakeover('Next awakening layer did not unlock after victory')
+            if self.failed_layers.get(f'{self.objective_kind}:{layer}')==self.build_revision:
+                raise RequestHumanTakeover('Previously failed novice layer requires a changed formation before retry')
+            self.current_layer=layer
             logger.info('Novice %s: selected unlocked layer=%s target=%s',self.menu_title,layer,target)
             boxes=self._tap(point)
             y=point[1]
@@ -76,6 +91,8 @@ class AwakeningAdapter(GameUi,GeneralBattle):
 
 class OrochiNoviceAdapter(AwakeningAdapter):
     from tasks.Orochi.page import page_orochi
+    objective_kind="orochi"
+    max_layer=7
     zone_page=page_orochi
     zone_point=None
     menu_title='御魂'

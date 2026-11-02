@@ -106,14 +106,14 @@ def choose_plan(state, target_level=40):
     return ModulePlan('Exploration', chapter, 'Short XP batch, then re-read level and novice tasks')
 
 
-def run_existing(plan, config, device):
+def run_existing(plan, config, device, *, build_revision='initial', xp_only=False):
     """Reuse the same Device and OAS modules; completion still needs UI verification."""
-    if plan.module == 'Orochi' and plan.target is not None and 1<=plan.target<=5:
+    if plan.module == 'Orochi' and plan.target is not None and 1<=plan.target<=7:
         from tasks.BeginnerQuest.awakening import OrochiNoviceAdapter
-        return OrochiNoviceAdapter(config,device).run_to(plan.target)
+        return OrochiNoviceAdapter(config,device).run_to(plan.target,build_revision=build_revision)
     if plan.module == 'AwakeningAdapter':
         from tasks.BeginnerQuest.awakening import AwakeningAdapter
-        return AwakeningAdapter(config,device).run_to(plan.target)
+        return AwakeningAdapter(config,device).run_to(plan.target,build_revision=build_revision)
     allowed = {'Orochi','Exploration','ExplorationHardAdapter','ExperienceYoukai','Tako'}
     if plan.module not in allowed:
         raise ValueError('This plan requires a novice UI adapter')
@@ -138,12 +138,12 @@ def run_existing(plan, config, device):
         override(c,'exploration_level',list(ExplorationLevel)[plan.target-1])
         override(c,'minions_cnt',3)
         override(c,'limit_time',time(0,5))
-        override(c,'up_type',UpType.ALL)
+        override(c,'up_type',UpType.EXP if xp_only else UpType.ALL)
         override(c,'auto_rotate',AutoRotate.no)
     try:
-        if plan.module=='ExplorationHardAdapter':
-            from tasks.BeginnerQuest.exploration_hard import ExplorationHardAdapter
-            handler=ExplorationHardAdapter(config,device)
+        if plan.module in {'Exploration','ExplorationHardAdapter'}:
+            from tasks.BeginnerQuest.exploration_hard import ExplorationHardAdapter,ExplorationNormalAdapter
+            handler=(ExplorationHardAdapter if plan.module=='ExplorationHardAdapter' else ExplorationNormalAdapter)(config,device)
         else:
             handler=importlib.import_module(f'tasks.{plan.module}.script_task').ScriptTask(config,device)
         original=handler.battle_wait

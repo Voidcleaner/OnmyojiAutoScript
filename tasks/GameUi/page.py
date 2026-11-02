@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from tasks.GameUi.action import ActionSequence, ConditionalAction, conditional_action, sequence
 from tasks.GameUi.default_pages import (
+    page_beginner_journey,
+    page_beginner_borrow,
     page_act_list,
     page_area_boss,
     page_awake_zones,
@@ -60,6 +62,8 @@ from tasks.GameUi.page_definition import Page, Transition
 from tasks.GameUi.registry import PageRegistry
 
 __all__ = [
+    "page_beginner_journey",
+    "page_beginner_borrow",
     "ActionSequence",
     "AllMatcher",
     "AnyMatcher",

@@ -114,6 +114,43 @@ class BeginnerQuestTests(unittest.TestCase):
                 Window._desktop_press(device,100,200,.01)
             self.assertEqual(cursor.call_args.args,((10,20),))
 
+    def test_crossover_down_timeout_releases_without_replaying_down(self):
+        import pywintypes
+        from win32con import WM_LBUTTONDOWN,WM_LBUTTONUP
+        from module.device.method.windows_impl import Window
+        device = SimpleNamespace(config=SimpleNamespace(script=SimpleNamespace(device=SimpleNamespace(screenshot_method='macos_window'))),root_handle_num=123,desktop_window_restore_if_minimized=lambda:None,desktop_message_coord=lambda x,y:(x,y))
+        with patch('win32api.GetCursorPos',return_value=(10,20)), patch('win32api.SetCursorPos') as cursor, patch('win32gui.ClientToScreen',return_value=(300,400)), patch('win32gui.SendMessageTimeout',side_effect=[None,pywintypes.error(1460,'SendMessageTimeout','Timeout'),None]) as send:
+            Window._desktop_press(device,100,200,.01)
+        messages=[call.args[1] for call in send.call_args_list]
+        self.assertEqual(messages.count(WM_LBUTTONDOWN),1)
+        self.assertEqual(messages[-1],WM_LBUTTONUP)
+        self.assertEqual(cursor.call_args.args,((10,20),))
+
+    def test_crossover_drag_holds_mouse_before_moving(self):
+        from win32con import WM_LBUTTONDOWN,WM_LBUTTONUP
+        from module.device.method.windows_impl import Window
+        device=SimpleNamespace(config=SimpleNamespace(script=SimpleNamespace(device=SimpleNamespace(screenshot_method='macos_window'))),root_handle_num=123,desktop_window_restore_if_minimized=lambda:None,desktop_message_coord=lambda x,y:(int(x),int(y)))
+        with patch('win32api.GetCursorPos',return_value=(10,20)),patch('win32api.SetCursorPos'),patch('win32gui.ClientToScreen',return_value=(300,400)),patch('win32gui.SendMessageTimeout') as send,patch('module.device.method.windows_impl.human_track',return_value=[[500,600],[1000,320]]),patch('module.device.method.windows_impl.time.sleep') as sleep:
+            Window.swipe_desktop_window_message(device,[500,600],[1000,320],hold_time=.8)
+        self.assertIn(unittest.mock.call(.8),sleep.call_args_list)
+        self.assertEqual([c.args[1] for c in send.call_args_list].count(WM_LBUTTONDOWN),1)
+        self.assertEqual(send.call_args_list[-1].args[1],WM_LBUTTONUP)
+
+    def test_on_field_card_match_also_requires_its_selection_marker(self):
+        from tasks.BeginnerQuest.vision import Action
+        rule={'file':'face.png','kind':'support_on_field','region':[250,500,1100,675],'marker_file':'marker.png','marker_offset':[9,-44]}
+        with patch('tasks.BeginnerQuest.script_task.json.loads',return_value=[rule]),patch('tasks.BeginnerQuest.script_task.template_action',side_effect=[Action('support_on_field',(600,570),.99),None]):
+            self.assertIsNone(self.task.templates(self.image,{'support_on_field'}))
+
+    def test_verified_on_field_markers_are_checked_before_prepare(self):
+        from tasks.BeginnerQuest.vision import Action
+        self.image[:]=180
+        self.task.borrow_seen=True
+        with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as ocr,patch.object(self.task,'team_is_verified',return_value=True),patch.object(self.task,'templates',side_effect=lambda image,kinds:Action('prepare',(1180,591)) if kinds=={'prepare'} else None):
+            ocr.return_value.detect_and_ocr.return_value=[]
+            self.assertEqual(self.task.decide(self.image).name,'prepare')
+        self.assertTrue(self.task.team_verified)
+
     def test_story_hud_clears_battle_state_left_from_previous_client(self):
         self.task.battle_pending = True
         with patch('tasks.BeginnerQuest.script_task.get_ocr_model') as model, patch.object(self.task,'templates') as templates:

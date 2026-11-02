@@ -7,6 +7,7 @@ from tasks.Exploration.script_task import ScriptTask as ExplorationTask
 
 
 class ExplorationHardAdapter(ExplorationTask):
+    difficulty="困难"
     def run(self):
         from tasks.Exploration.base import Scene
         self.screenshot()
@@ -25,15 +26,23 @@ class ExplorationHardAdapter(ExplorationTask):
         super().open_expect_level()
         self.screenshot()
         boxes=get_ocr_model().detect_and_ocr(self.device.image)
-        matches=[b for b in boxes if b.score>=.8 and '困难' in b.ocr_text
+        expected=self.config.exploration.exploration_config.exploration_level
+        expected=getattr(expected,'value',expected)
+        if not any(b.ocr_text.replace('草','章')==expected and b.box[:,1].mean()<80 and b.box[:,0].mean()<350 for b in boxes):
+            raise RequestHumanTakeover('Exploration chapter title does not match requested chapter')
+        matches=[b for b in boxes if b.score>=.8 and self.difficulty in b.ocr_text
                  and 15<b.box[:,0].mean()<200 and 180<b.box[:,1].mean()<400]
         if len(matches)!=1:
             raise RequestHumanTakeover('Hard exploration selector not verified')
         x,y=map(int,matches[0].box.mean(axis=0))
-        self.device.click(x,y,control_check=False,control_name='NOVICE_EXPLORATION_HARD')
+        self.device.click(x,y,control_check=False,control_name='NOVICE_EXPLORATION_'+self.difficulty)
         time.sleep(1)
         self.screenshot()
         patch=self.device.image[y-14:y+15,20:180].astype(np.float32)
         selected=(patch[:,:,0]>patch[:,:,1]*1.5)&(patch[:,:,0]>100)
         if selected.mean()<.25:
             raise RequestHumanTakeover('Hard exploration tab did not become selected')
+
+
+class ExplorationNormalAdapter(ExplorationHardAdapter):
+    difficulty="普通"

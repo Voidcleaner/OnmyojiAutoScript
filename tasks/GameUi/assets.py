@@ -232,3 +232,6 @@ class GameUiAssets:
 					 array=["版本"])
 
 
+
+	I_CHECK_BEGINNER_BORROW = RuleImage(roi_front=(90,14,138,44), roi_back=(80,0,170,75), threshold=0.9, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_borrow.png")
+	I_CHECK_BEGINNER_JOURNEY = RuleImage(roi_front=(90,14,118,44), roi_back=(80,0,160,75), threshold=0.9, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_journey.png")

@@ -36,6 +36,14 @@ class ScriptTask:
                 continue
             action = template_action(image, Path(rule['file']), rule['kind'],
                                      rule.get('threshold', .86), tuple(rule['region']))
+            if action and 'marker_file' in rule:
+                dx,dy=rule['marker_offset']
+                x,y=action.point[0]+dx,action.point[1]+dy
+                marker=template_action(image,Path(rule['marker_file']),rule['kind'],
+                                       .9,(x-22,y-22,x+22,y+22))
+                if marker is None:
+                    continue
+                action.score=min(action.score,marker.score)
             if action:
                 if 'click_point' in rule:
                     action.point = tuple(rule['click_point'])
@@ -81,6 +89,8 @@ class ScriptTask:
         prepare_button = (self.templates(image, {'prepare'}) or
                           choose_text(boxes, ('准备',), (1080,480,1270,690), 'prepare'))
         if prepare_button:
+            if self.team_is_verified(image):
+                self.team_verified=True
             if self.borrow_seen and self.options.require_verified_team and not self.team_verified:
                 raise RequestHumanTakeover('BeginnerQuest: verify borrowed damage dealer and fire provider before battle')
             self.battle_pending = False

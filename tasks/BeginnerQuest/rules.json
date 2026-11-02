@@ -315,5 +315,37 @@
       650
     ],
     "threshold": 0.9
+  },
+  {
+    "file": "tasks/BeginnerQuest/templates/support_lumaru_on_field.png",
+    "kind": "support_on_field",
+    "region": [
+      250,
+      500,
+      1100,
+      675
+    ],
+    "threshold": 0.9,
+    "marker_file": "tasks/BeginnerQuest/templates/card_on_field_marker.png",
+    "marker_offset": [
+      9,
+      -44
+    ]
+  },
+  {
+    "file": "tasks/BeginnerQuest/templates/fire_zashiki_on_field.png",
+    "kind": "fire_on_field",
+    "region": [
+      250,
+      500,
+      1100,
+      675
+    ],
+    "threshold": 0.9,
+    "marker_file": "tasks/BeginnerQuest/templates/fire_on_field_marker.png",
+    "marker_offset": [
+      11,
+      -44
+    ]
   }
 ]
