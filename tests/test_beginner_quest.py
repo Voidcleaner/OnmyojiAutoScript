@@ -53,6 +53,12 @@ class BeginnerQuestTests(unittest.TestCase):
             cv2.circle(self.image,(x,250),4,(240,240,240),-1)
         self.assertIsNone(ellipsis_action(self.image))
 
+    def test_npc_marker_above_old_search_boundary(self):
+        for x in (388,400,412):
+            cv2.circle(self.image,(x,128),4,(240,240,240),-1)
+        cv2.circle(self.image,(400,128),26,(240,200,120),3)
+        self.assertEqual(ellipsis_action(self.image).point,(400,128))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 

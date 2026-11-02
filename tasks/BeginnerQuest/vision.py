@@ -48,7 +48,7 @@ def ellipsis_action(rgb, excluded_regions=()):
     dots = []
     for i in range(1, n):
         x, y, w, h, area = stats[i]
-        if 3 <= w <= 11 and 3 <= h <= 11 and 7 <= area <= 85 and 145 < y < 620:
+        if 3 <= w <= 11 and 3 <= h <= 11 and 7 <= area <= 85 and 110 < y < 620:
             cx,cy=centers[i]
             if not any(x1<=cx<=x2 and y1<=cy<=y2 for x1,y1,x2,y2 in excluded_regions):
                 dots.append(centers[i])

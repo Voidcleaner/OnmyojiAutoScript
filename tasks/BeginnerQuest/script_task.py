@@ -206,6 +206,7 @@ class ScriptTask:
                 and not self.device.find_desktop_login_popup() and self.scene_is_ready(initial)):
             self.device.desktop_mark_logged_in()
         self.device.stuck_record_clear()
+        self.device.click_record_remove('BeginnerQuest_search')
         while count < self.options.max_actions and time.monotonic() - started < self.options.max_seconds:
             image = self.device.screenshot()
             if time.monotonic()-last_level_check>10 and self.templates(image, {'courtyard_scene'}):
@@ -246,6 +247,7 @@ class ScriptTask:
                 time.sleep(2)
                 continue
             self.search.reset()
+            self.device.click_record_remove('BeginnerQuest_search')
             key = (action.name, action.point[0] // 15, action.point[1] // 15)
             repeats = repeats + 1 if key == last_key else 0
             if repeats >= 4:
