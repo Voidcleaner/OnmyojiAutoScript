@@ -53,6 +53,11 @@ class NoviceHub(GameUi):
         return self._read()
 
     def _dismiss(self,boxes):
+        from tasks.BeginnerQuest.vision import pink_close_action
+        close=pink_close_action(self.device.image)
+        if close:
+            self._tap(close.point)
+            return True
         from tasks.Component.optional_prompt import handle_cosmetic_activation
         if handle_cosmetic_activation(self,boxes):return True
         from tasks.Component.phone_prompt import handle_phone_prompt

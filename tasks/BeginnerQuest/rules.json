@@ -25,12 +25,12 @@
     "file": "tasks/GlobalGame/ui/ui_close_celebration.png",
     "kind": "dismiss_intro",
     "region": [
-      1080,
+      600,
       20,
-      1260,
-      170
+      1280,
+      220
     ],
-    "threshold": 0.8
+    "threshold": 0.9
   },
   {
     "file": "tasks/BeginnerQuest/templates/prepare_button.png",

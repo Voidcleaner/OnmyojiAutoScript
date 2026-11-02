@@ -85,6 +85,14 @@ class BeginnerQuestTests(unittest.TestCase):
         self.assertEqual(action.name,'continue')
         self.assertEqual(action.point,(638,475))
 
+    def test_centered_modal_close_is_detected_before_underlying_hint(self):
+        from tasks.BeginnerQuest.vision import pink_close_action
+        template=cv2.imread('tasks/GlobalGame/ui/ui_close_celebration.png')
+        template=cv2.cvtColor(template,cv2.COLOR_BGR2RGB)
+        h,w=template.shape[:2]
+        self.image[90:90+h,840:840+w]=template
+        self.assertEqual(pink_close_action(self.image).point,(840+w//2,90+h//2))
+
     def test_chat_skip_is_not_a_button(self):
         self.assertIsNone(self.decide([box('跳过',800,80)]))
 

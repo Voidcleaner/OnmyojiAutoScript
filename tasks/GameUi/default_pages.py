@@ -240,13 +240,13 @@ page_exploration = Page(GameUiAssets.I_CHECK_EXPLORATION, category="global")
 page_exploration.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_exploration->page_main")
 page_exploration.add_enter_failure_hooks(ExplorationAssets.I_E_OPEN_FOLDER)
 def enter_exploration(task):
-    if (task.appear_then_click(GameUiAssets.I_MAIN_GOTO_EXPLORATION)
-            or task.appear_then_click(GameUiAssets.I_MAIN_GOTO_BEGINNER_EXPLORATION)):
-        return True
     if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE):
-        task.device.click(745,260,control_check=False,control_name='BEGINNER_EXPLORE')
+        # The paper's lower edge/shadow can match without accepting clicks.
+        # Use its verified upper interior before trying broad legacy templates.
+        task.device.click(741,244,control_check=False,control_name='BEGINNER_EXPLORE')
         return True
-    return False
+    return bool(task.appear_then_click(GameUiAssets.I_MAIN_GOTO_EXPLORATION)
+                or task.appear_then_click(GameUiAssets.I_MAIN_GOTO_BEGINNER_EXPLORATION))
 
 page_main.connect(page_exploration, enter_exploration, key="page_main->page_exploration")
 

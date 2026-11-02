@@ -139,3 +139,8 @@ def exploration_click_point(point):
     # The swords template occupies the upper part of a larger round button.
     # Its lower half remains clickable beneath the scrolling chat banner.
     return (point[0],max(130,point[1]))
+
+
+def pink_close_action(image):
+    return template_action(image,Path('tasks/GlobalGame/ui/ui_close_celebration.png'),
+                           'close_foreground_modal',.9,(600,20,1280,220))
