@@ -146,6 +146,15 @@ def run_existing(plan, config, device, *, build_revision='initial', xp_only=Fals
             handler=(ExplorationHardAdapter if plan.module=='ExplorationHardAdapter' else ExplorationNormalAdapter)(config,device)
         else:
             handler=importlib.import_module(f'tasks.{plan.module}.script_task').ScriptTask(config,device)
+        if plan.module in {'Exploration','ExplorationHardAdapter'}:
+            handler.progression_boss_wins=0
+            original_fire=handler.fire
+            def record_boss_fire(button):
+                result=original_fire(button)
+                if result and button is handler.I_BOSS_BATTLE_BUTTON:
+                    handler.progression_boss_wins+=1
+                return result
+            handler.fire=record_boss_fire
         original=handler.battle_wait
         def stop_on_loss(*args,**kwargs):
             result=original(*args,**kwargs)
@@ -158,6 +167,9 @@ def run_existing(plan, config, device, *, build_revision='initial', xp_only=Fals
     finally:
         for obj,key,value in reversed(changed):setattr(obj,key,value)
         config.save()
+    if plan.module in {'Exploration','ExplorationHardAdapter'}:
+        return {'boss_wins':handler.progression_boss_wins,'chapter':plan.target,
+                'difficulty':'hard' if plan.module=='ExplorationHardAdapter' else 'normal'}
     return getattr(handler, 'progression_outcome', 'verify_in_novice_ui')
 
 

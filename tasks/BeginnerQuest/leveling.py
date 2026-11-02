@@ -19,19 +19,23 @@ def read_stamina(image):
 
 
 class LevelingRunner(NoviceHub):
-    def run_to(self,chapter,target=40,max_batches=30,min_stamina=60):
+    def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3):
         if not 1<=chapter<=28 or not 1<=target<=60:raise ValueError('Unsupported chapter/player-level target')
         root=Path('log/beginner_quest')/self.config.config_name
         root.mkdir(parents=True,exist_ok=True)
         started=time.monotonic()
+        previous_level=None;unchanged=0
         for batch in range(max_batches+1):
             self.goto_page(page_main)
             self.screenshot()
             level=read_player_level(self.device.image);stamina=read_stamina(self.device.image)
-            state={'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
+            unchanged=unchanged+1 if level is not None and level==previous_level else 0
+            previous_level=level
+            state={'unchanged_batches':unchanged,'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
             if level is None or stamina is None:status='unverified_ui'
             elif level>=target:status='complete'
             elif stamina<min_stamina:status='low_stamina'
+            elif unchanged_limit and unchanged>=unchanged_limit:status='replan_needed'
             elif batch>=max_batches:status='batch_limit'
             else:status='running'
             state['status']=status

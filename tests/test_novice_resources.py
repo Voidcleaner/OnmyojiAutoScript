@@ -86,7 +86,7 @@ class NoviceResourceTests(unittest.TestCase):
         import tempfile
         from pathlib import Path
         from tasks.BeginnerQuest.leveling import LevelingRunner
-        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8)),goto_page=Mock(),screenshot=Mock())
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8),screenshot=Mock(return_value=np.zeros((720,1280,3),np.uint8))),goto_page=Mock(),screenshot=Mock())
         with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',side_effect=[28,40]),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=648),patch('tasks.BeginnerQuest.leveling.run_existing') as run:
             result=LevelingRunner.run_to(task,10,target=40)
         self.assertEqual(result['status'],'complete')
@@ -97,7 +97,7 @@ class NoviceResourceTests(unittest.TestCase):
         import tempfile
         from pathlib import Path
         from tasks.BeginnerQuest.leveling import LevelingRunner
-        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8)),goto_page=Mock(),screenshot=Mock())
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8),screenshot=Mock(return_value=np.zeros((720,1280,3),np.uint8))),goto_page=Mock(),screenshot=Mock())
         with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',return_value=28),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=59),patch('tasks.BeginnerQuest.leveling.run_existing') as run:
             result=LevelingRunner.run_to(task,10)
         self.assertEqual(result['status'],'low_stamina')
@@ -119,9 +119,33 @@ class NoviceResourceTests(unittest.TestCase):
         import tempfile,json
         from pathlib import Path
         from tasks.BeginnerQuest.leveling import LevelingRunner
-        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8)),goto_page=Mock(),screenshot=Mock())
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8),screenshot=Mock(return_value=np.zeros((720,1280,3),np.uint8))),goto_page=Mock(),screenshot=Mock())
         with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',return_value=29),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=638),patch('tasks.BeginnerQuest.leveling.run_existing',side_effect=ValueError('selector')):
             with self.assertRaises(ValueError):LevelingRunner.run_to(task,10)
             state=json.loads((Path(directory)/'log/beginner_quest/test/leveling.json').read_text())
         self.assertEqual(state['status'],'stopped_error')
         self.assertIn('selector',state['reason'])
+
+    def test_first_clear_requires_boss_victory_and_preserves_40_target(self):
+        import tempfile
+        from pathlib import Path
+        from tasks.BeginnerQuest.first_clears import FirstClearRunner
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8),screenshot=Mock(return_value=np.zeros((720,1280,3),np.uint8))),goto_page=Mock(),screenshot=Mock())
+        for boss_wins in (0,1):
+            with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.first_clears.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.first_clears.read_player_level',side_effect=[29,30]),patch('tasks.BeginnerQuest.first_clears.read_stamina',return_value=580),patch('tasks.BeginnerQuest.first_clears.run_existing',return_value={'boss_wins':boss_wins,'chapter':10}) as run:
+                if not boss_wins:
+                    with self.assertRaises(RequestHumanTakeover):FirstClearRunner.run_route(task,[('normal',10)])
+                else:
+                    result=FirstClearRunner.run_route(task,[('normal',10),('hard',1)])
+                    self.assertEqual(result['status'],'milestone_replan')
+                    self.assertEqual(run.call_count,1)
+
+    def test_unchanged_level_batches_request_replanning(self):
+        import tempfile
+        from pathlib import Path
+        from tasks.BeginnerQuest.leveling import LevelingRunner
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8),screenshot=Mock(return_value=np.zeros((720,1280,3),np.uint8))),goto_page=Mock(),screenshot=Mock())
+        with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',return_value=29),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=580),patch('tasks.BeginnerQuest.leveling.run_existing') as run:
+            result=LevelingRunner.run_to(task,10,unchanged_limit=3)
+        self.assertEqual(result['status'],'replan_needed')
+        self.assertEqual(run.call_count,3)
