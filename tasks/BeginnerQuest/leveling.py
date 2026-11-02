@@ -28,7 +28,8 @@ def read_experience_fraction(image):
 
 
 class LevelingRunner(NoviceHub):
-    def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3,xp_only=True):
+    def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3,xp_only=True,difficulty="normal"):
+        if difficulty not in ('normal','hard'):raise ValueError('Unsupported exploration difficulty')
         if not 1<=chapter<=28 or not 1<=target<=60:raise ValueError('Unsupported chapter/player-level target')
         root=Path('log/beginner_quest')/self.config.config_name
         root.mkdir(parents=True,exist_ok=True)
@@ -43,7 +44,7 @@ class LevelingRunner(NoviceHub):
                                and experience>previous_experience+.01)
             unchanged=unchanged+1 if level is not None and level==previous_level and not gained_experience else 0
             previous_level=level;previous_experience=experience
-            state={'experience_fraction':experience,'unchanged_batches':unchanged,'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
+            state={'difficulty':difficulty,'experience_fraction':experience,'unchanged_batches':unchanged,'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
             if level is None:status='unverified_ui'
             elif level>=target:status='complete'
             elif stamina is None:status='unverified_ui'
@@ -57,7 +58,7 @@ class LevelingRunner(NoviceHub):
             if status=='unverified_ui':raise RequestHumanTakeover('Player level/stamina not verified; do not keep spending')
             if status!='running':return state
             try:
-                run_existing(ModulePlan('Exploration',chapter),self.config,self.device,xp_only=xp_only)
+                run_existing(ModulePlan('ExplorationHardAdapter' if difficulty=='hard' else 'Exploration',chapter),self.config,self.device,xp_only=xp_only)
             except Exception as exc:
                 state.update(status='stopped_error',reason=f'{type(exc).__name__}: {exc}')
                 (root/'leveling.json').write_text(json.dumps(state),encoding='utf-8')

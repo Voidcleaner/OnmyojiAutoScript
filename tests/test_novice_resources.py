@@ -173,3 +173,15 @@ class NoviceResourceTests(unittest.TestCase):
             result=LevelingRunner.run_to(task,13,max_batches=4,unchanged_limit=3)
         self.assertEqual(result['status'],'batch_limit')
         self.assertEqual(run.call_count,4)
+
+
+    def test_leveling_explicit_hard_mode_uses_verified_hard_adapter(self):
+        import tempfile
+        from pathlib import Path
+        from tasks.BeginnerQuest.leveling import LevelingRunner
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=np.zeros((720,1280,3),np.uint8)),goto_page=Mock(),screenshot=Mock())
+        with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',side_effect=[32,33]),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=200),patch('tasks.BeginnerQuest.leveling.run_existing') as run:
+            result=LevelingRunner.run_to(task,16,target=33,difficulty='hard',xp_only=False)
+        self.assertEqual(result['status'],'complete')
+        self.assertEqual(run.call_args.args[0].module,'ExplorationHardAdapter')
+        self.assertEqual(result['difficulty'],'hard')
