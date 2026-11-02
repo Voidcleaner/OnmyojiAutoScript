@@ -62,7 +62,8 @@ class NoviceHub(GameUi):
             time.sleep(.7)
             return True
         words=[b.ocr_text.replace(' ','') for b in boxes]
-        if '获得插画' in words:
+        if ('获得插画' in words or (any('插画' in b.ocr_text and b.box[:,1].mean()<150 for b in boxes)
+                                       and any('插画收集' in w for w in words))):
             self._tap((1170,450))
             return True
         if '获得奖励' in words:
@@ -94,6 +95,7 @@ class NoviceHub(GameUi):
 
     def scan(self):
         self.device.click_record_clear()
+        self._clear_completion()
         self.goto_page(page_main)
         player_level=read_player_level(self.device.image)
         for _ in range(3):
