@@ -35,6 +35,11 @@ class BeginnerQuestTests(unittest.TestCase):
             model.return_value.detect_and_ocr.return_value = []
             self.assertEqual(self.task.decide(self.image), marker)
 
+    def test_optional_story_audio_download_is_cancelled_before_skip(self):
+        action = self.decide([box('剧情音频扩展包下载',640,220), box('取消',480,470), box('下载',790,470), box('跳过',869,573)])
+        self.assertEqual(action.name, 'cancel_optional_download')
+        self.assertEqual(action.point, (480,470))
+
     def test_three_dots_need_circle(self):
         for x in (388,400,412):
             cv2.circle(self.image,(x,250),4,(240,240,240),-1)
