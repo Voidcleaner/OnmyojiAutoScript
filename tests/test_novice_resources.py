@@ -159,3 +159,17 @@ class NoviceResourceTests(unittest.TestCase):
             result=LevelingRunner.run_to(task,10,unchanged_limit=3)
         self.assertEqual(result['status'],'replan_needed')
         self.assertEqual(run.call_count,3)
+
+
+    def test_experience_progress_avoids_false_stall_at_same_level(self):
+        import tempfile
+        from pathlib import Path
+        from tasks.BeginnerQuest.leveling import LevelingRunner,read_experience_fraction
+        image=np.zeros((720,1280,3),np.uint8)
+        image[65:75,133:213]=(250,200,20)
+        self.assertAlmostEqual(read_experience_fraction(image),.497,places=3)
+        task=SimpleNamespace(config=SimpleNamespace(config_name='test'),device=SimpleNamespace(image=image),goto_page=Mock(),screenshot=Mock())
+        with tempfile.TemporaryDirectory() as directory,patch('tasks.BeginnerQuest.leveling.Path',side_effect=lambda p:Path(directory)/p),patch('tasks.BeginnerQuest.leveling.read_player_level',return_value=31),patch('tasks.BeginnerQuest.leveling.read_stamina',return_value=300),patch('tasks.BeginnerQuest.leveling.read_experience_fraction',side_effect=[.1,.2,.3,.4,.5]),patch('tasks.BeginnerQuest.leveling.run_existing') as run:
+            result=LevelingRunner.run_to(task,13,max_batches=4,unchanged_limit=3)
+        self.assertEqual(result['status'],'batch_limit')
+        self.assertEqual(run.call_count,4)

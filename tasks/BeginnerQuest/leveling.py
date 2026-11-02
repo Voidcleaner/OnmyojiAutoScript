@@ -18,20 +18,32 @@ def read_stamina(image):
     return values[0] if len(values)==1 else None
 
 
+def read_experience_fraction(image):
+    """Measure the avatar's fixed yellow progress bar on the courtyard HUD."""
+    import numpy as np
+    patch=image[65:75,133:294].astype(np.float32)
+    if patch.shape!=(10,161,3):return None
+    yellow=(patch[:,:,0]>130)&(patch[:,:,1]>75)&(patch[:,:,0]>patch[:,:,2]*1.35)&(patch[:,:,1]>patch[:,:,2]*1.2)
+    return round(float((yellow.mean(axis=0)>.4).mean()),4)
+
+
 class LevelingRunner(NoviceHub):
     def run_to(self,chapter,target=40,max_batches=30,min_stamina=60,unchanged_limit=3,xp_only=True):
         if not 1<=chapter<=28 or not 1<=target<=60:raise ValueError('Unsupported chapter/player-level target')
         root=Path('log/beginner_quest')/self.config.config_name
         root.mkdir(parents=True,exist_ok=True)
         started=time.monotonic()
-        previous_level=None;unchanged=0
+        previous_level=None;previous_experience=None;unchanged=0
         for batch in range(max_batches+1):
             self.goto_page(page_main)
             self.screenshot()
             level=read_player_level(self.device.image);stamina=read_stamina(self.device.image)
-            unchanged=unchanged+1 if level is not None and level==previous_level else 0
-            previous_level=level
-            state={'unchanged_batches':unchanged,'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
+            experience=read_experience_fraction(self.device.image)
+            gained_experience=(experience is not None and previous_experience is not None
+                               and experience>previous_experience+.01)
+            unchanged=unchanged+1 if level is not None and level==previous_level and not gained_experience else 0
+            previous_level=level;previous_experience=experience
+            state={'experience_fraction':experience,'unchanged_batches':unchanged,'player_level':level,'target':target,'stamina':stamina,'chapter':chapter,'batch':batch,'elapsed_seconds':round(time.monotonic()-started)}
             if level is None:status='unverified_ui'
             elif level>=target:status='complete'
             elif stamina is None:status='unverified_ui'
