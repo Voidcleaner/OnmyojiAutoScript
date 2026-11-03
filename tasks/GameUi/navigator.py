@@ -41,10 +41,12 @@ class GameUi(BaseTask, GameUiAssets):
     # 全局未知页关闭动作，所有任务共享。
     from tasks.Component.phone_prompt import handle_phone_prompt
     from tasks.Component.continue_prompt import handle_continue_prompt
+    from tasks.Component.idle_courtyard import handle_idle_courtyard
 
     from tasks.Component.optional_prompt import handle_guild_join_prompt,handle_cosmetic_activation
 
     DEFAULT_UNKNOWN_CLOSERS = [
+        handle_idle_courtyard,
         handle_guild_join_prompt,
         handle_cosmetic_activation,
         handle_phone_prompt,

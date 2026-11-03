@@ -34,11 +34,6 @@ def main():
     def state(status,**extra):
         (root/'supervisor.json').write_text(json.dumps({'status':status,'target':args.target,**extra}),encoding='utf-8')
     deadline=time.monotonic()+args.wait_hours*3600
-    while session_locked():
-        state('waiting_for_unlock')
-        if time.monotonic()>=deadline:
-            state('unlock_wait_expired');return
-        time.sleep(10)
     # One worker only. Unexpected failure is not an instruction to restart
     # spending. The existing controller enforces loss and UI verification gates.
     source=('from script import Script\n'
@@ -51,12 +46,24 @@ def main():
             f'print(ContinuousProgression(s.config,s.device).run({args.chapter},target={args.target},min_stamina={args.min_stamina}),flush=True)\n')
     command=[str(args.wine),'--bottle',args.bottle,'--wait','--workdir',str(repo),
              str(args.python),'-u','-c',source]
-    state('running')
-    with (root/'continuous-worker.log').open('a',encoding='utf-8') as output:
-        env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
-        result=subprocess.run(command,cwd=repo,env=env,stdout=output,stderr=subprocess.STDOUT)
-    state('worker_finished',exit_code=result.returncode)
+    for attempt in range(4):
+        while session_locked():
+            state('waiting_for_unlock',attempt=attempt)
+            if time.monotonic()>=deadline:
+                state('unlock_wait_expired');return 1
+            time.sleep(10)
+        state('running',attempt=attempt)
+        with (root/'continuous-worker.log').open('a',encoding='utf-8') as output:
+            env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
+            result=subprocess.run(command,cwd=repo,env=env,stdout=output,stderr=subprocess.STDOUT)
+        # Resume only a failed worker with a currently locked host. Unknown
+        # gameplay errors on an unlocked host still stop for review.
+        if result.returncode and session_locked():continue
+        state('worker_finished',exit_code=result.returncode)
+        return result.returncode
+    state('lock_interrupt_limit')
+    return 1
 
 
 if __name__=='__main__':
-    main()
+    raise SystemExit(main())

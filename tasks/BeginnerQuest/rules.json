@@ -1,5 +1,16 @@
 [
   {
+    "file": "tasks/BeginnerQuest/templates/story_fight_top.png",
+    "kind": "fight",
+    "region": [
+      250,
+      20,
+      1100,
+      120
+    ],
+    "threshold": 0.92
+  },
+  {
     "file": "tasks/BeginnerQuest/templates/npc_courtyard.png",
     "kind": "courtyard_talk",
     "region": [
