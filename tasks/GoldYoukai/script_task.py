@@ -46,9 +46,17 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
         while count < 2:
             self.goto_page(page_team)
             self.check_zones('金币妖怪')
+            from tasks.Component.GeneralRoom.cooldown import row_cooldown
+            from module.ocr.models import get_ocr_model
+            self.screenshot()
+            cooldown=row_cooldown(get_ocr_model().detect_and_ocr(self.device.image),'金币妖怪')
+            if cooldown:
+                self.progression_outcome={'status':'cooldown','retry_after_seconds':cooldown}
+                self.gold_exit(con,success=False)
             # 开始
             if not self.create_room():
-                self.gold_exit(con)
+                self.progression_outcome='unavailable'
+                self.gold_exit(con,success=False)
             self.ensure_public()
             self.create_ensure()
             # 进入到了房间里面
@@ -64,7 +72,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
                 if not present and wait_timer.reached():
                     self.progression_outcome='no_teammate'
                     logger.warning('No teammate joined; leave without starting solo')
-                    self.gold_exit(con)
+                    self.gold_exit(con,success=False)
                 if teammate_gate.ready(present):
                     self.screenshot()
                     if not self.is_in_room() or self.appear(self.I_ADD_5_1):
@@ -103,7 +111,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
                 self.ui_click_until_disappear(self.I_FALSE)
                 return False
 
-    def gold_exit(self, con):
+    def gold_exit(self, con, success=True):
         self.goto_page(page_main)
         if con.buff_gold_50_click or con.buff_gold_100_click:
             self.open_buff()
@@ -113,7 +121,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, SwitchSoul, 
                 self.gold_100(False)
             self.close_buff()
 
-        self.set_next_run(task='GoldYoukai', success=True, finish=False)
+        self.set_next_run(task='GoldYoukai', success=success, finish=False)
         raise TaskEnd('GoldYoukai')
 
 
