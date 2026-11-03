@@ -17,6 +17,7 @@ def main():
     parser.add_argument('--account',required=True)
     parser.add_argument('--chapter',type=int,required=True)
     parser.add_argument('--target',type=int,default=40)
+    parser.add_argument('--min-stamina',type=int,default=200)
     parser.add_argument('--wine',type=Path,required=True)
     parser.add_argument('--python',type=Path,required=True)
     parser.add_argument('--bottle',default='yys')
@@ -26,7 +27,7 @@ def main():
     repo=Path(__file__).resolve().parents[2]
     if not args.account.replace('_','').isalnum() or not (repo/'config'/f'{args.account}.json').is_file():
         parser.error('Existing account configuration required')
-    if not 1<=args.chapter<=28 or not 1<=args.target<=60 or not 1<=args.wait_hours<=24:
+    if not 1<=args.chapter<=28 or not 1<=args.target<=60 or not 1<=args.wait_hours<=24 or args.min_stamina<0:
         parser.error('Invalid progression limits')
     root=repo/'log'/'beginner_quest'/args.account
     root.mkdir(parents=True,exist_ok=True)
@@ -47,7 +48,7 @@ def main():
             # This account has already won training and exploration with its
             # current team. No borrowing or lineup changes are requested here.
             f's.config.beginner_quest.quest_options.require_verified_team={not args.use_current_team!r}\n'
-            f'print(ContinuousProgression(s.config,s.device).run({args.chapter},target={args.target}),flush=True)\n')
+            f'print(ContinuousProgression(s.config,s.device).run({args.chapter},target={args.target},min_stamina={args.min_stamina}),flush=True)\n')
     command=[str(args.wine),'--bottle',args.bottle,'--wait','--workdir',str(repo),
              str(args.python),'-u','-c',source]
     state('running')

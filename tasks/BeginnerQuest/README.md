@@ -92,7 +92,7 @@ result = run_level_gate(config, device, chapter=17, target=35)
 
 只在实际等级达到目标后启动有时限的庭院剧情；体力不足直接返回，不购买资源。剧情结束返回重新规划或续战状态，不将中间等级或剧情批次当作40级完成。异常继续沿用原脚本的停止与现场记录机制。
 
-持续推进已登录账号可以运行 `continuous.ContinuousProgression(config, device).run(chapter=15, target=40)`。每升一级重新推进一次有时限的剧情，再按最多3批探索核验等级和经验；目标等级、低体力、战败、未知画面或总时间限制都会结束运行。默认总时间4小时，保留200体力，不购买资源。当前章节必须由实际解锁情况选择，不能用示例章节代替核验。状态保存在配置独立的 `continuous.json`。
+持续推进已登录账号可以运行 `continuous.ContinuousProgression(config, device).run(chapter=15, target=40)`。每升一级重新推进一次有时限的剧情，再按最多3批探索核验等级和经验；目标等级、低体力、战败、未知画面或总时间限制都会结束运行。默认总时间4小时，每批开始前要求至少200体力，不购买资源。当前章节必须由实际解锁情况选择，不能用示例章节代替核验。状态保存在配置独立的 `continuous.json`。
 
 macOS 可使用 `deploy/macos/progression_supervisor.py` 等待解锁后启动单个持续任务，参数包括 `--account`、`--chapter`、`--target`、`--wine`、`--python`；默认最多等待8小时，状态写入账号独立的 `supervisor.json`。锁屏时不输入，也不尝试解锁系统。`--use-current-team` 仅用于现有阵容已经实战获胜的账号；默认保留原队伍核验。异常退出不会无限重启消耗资源。
 
@@ -103,3 +103,5 @@ macOS 可使用 `deploy/macos/progression_supervisor.py` 等待解锁后启动�
 可在 OAS 的 Windows Python 环境从项目根目录运行 `dev_tools/run_mentorship.py --teacher-profile 配置名 --pupil-profile 配置名 --teacher-name 师父角色名 --pupil-name 徒弟角色名`。状态保存在后辈配置的 `mentorship.json`。已实测完整5场：发送邀请、接受专属“前辈邀请”卡、双方入队等待、师父准备战斗、徒弟结算和战后继续邀请。结束会取消继续邀请并回读每日次数；本次已核验0/5。后辈实际等级仍单独读取，不把完成次数当作升级完成。
 
 已增加闲庭模式的正向图标识别及退出钩子，避免庭院隐藏HUD时导航失败。CrossOver 客户区超过 Wine 鼠标坐标范围时会缩小保持比例，截图仍归一化到1280×720；已实测修复1136×640窗口右侧不能点击的问题。
+
+macOS 监护入口支持 `--min-stamina` 指定每批开始前的体力下限（默认200）；这不是批次结束后的保证余量。不同账号需要串行启动，避免多个脚本同时改变 Wine 的鼠标位置。
