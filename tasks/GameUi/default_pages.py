@@ -260,6 +260,7 @@ def enter_exploration(task):
         # The paper's lower edge/shadow can match without accepting clicks.
         # Use its verified upper interior before trying broad legacy templates.
         task.device.click(741,244,control_check=False,control_name='BEGINNER_EXPLORE')
+        task.device.stuck_record_clear()
         if getattr(task.device,'is_desktop',False):
             from time import monotonic,sleep
             deadline=monotonic()+12

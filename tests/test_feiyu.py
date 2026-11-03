@@ -96,3 +96,14 @@ class FeiyuTests(unittest.TestCase):
         task=object.__new__(FeiyuTraining);task._dismiss=Mock(return_value=True)
         self.assertTrue(task._event_cosmetic_popup([box('获得',358,123),box('成就',1193,346)]))
         task._dismiss.assert_called_once()
+
+    def test_pending_story_battle_never_navigates_back_to_courtyard(self):
+        from unittest.mock import Mock,patch
+        from tasks.BeginnerQuest.continuous import ContinuousProgression
+        task=object.__new__(ContinuousProgression)
+        task.goto_page=Mock();task._story_pending=Mock(return_value=True)
+        task._story_batch=Mock(return_value=True);task._record=Mock()
+        with patch('tasks.BeginnerQuest.continuous.time.monotonic',side_effect=[0,0,61]):
+            task.run(15,max_seconds=60)
+        task.goto_page.assert_not_called()
+        task._story_batch.assert_called_once()

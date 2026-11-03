@@ -100,6 +100,6 @@ macOS 可使用 `deploy/macos/progression_supervisor.py` 等待解锁后启动�
 
 `mentorship.MentorshipRunner` 协调两个已经登录的独立配置。请先在师父的“前辈之守护”页面选中正确后辈；程序校验双方姓名、读取每日守护历练次数，复用现有邀请按钮、通用战斗和组队等待机制。两人到齐并稳定3—5秒才允许挑战，单次最多5场，失败或未知界面立即停止。不会处理赠送御魂/式神、聊天、协同对弈或传承仪式。
 
-可在 OAS 的 Windows Python 环境从项目根目录运行 `dev_tools/run_mentorship.py --teacher-profile 配置名 --pupil-profile 配置名 --teacher-name 师父角色名 --pupil-name 徒弟角色名`。状态保存在后辈配置的 `mentorship.json`。当前已实测识别既有师徒关系、5/5每日次数及进入守护房间；邀请接受、双方结算与连续5场仍待完整实战联调，不能把启动脚本当作任务已经完成。
+可在 OAS 的 Windows Python 环境从项目根目录运行 `dev_tools/run_mentorship.py --teacher-profile 配置名 --pupil-profile 配置名 --teacher-name 师父角色名 --pupil-name 徒弟角色名`。状态保存在后辈配置的 `mentorship.json`。已实测完整5场：发送邀请、接受专属“前辈邀请”卡、双方入队等待、师父准备战斗、徒弟结算和战后继续邀请。结束会取消继续邀请并回读每日次数；本次已核验0/5。后辈实际等级仍单独读取，不把完成次数当作升级完成。
 
 已增加闲庭模式的正向图标识别及退出钩子，避免庭院隐藏HUD时导航失败。CrossOver 客户区超过 Wine 鼠标坐标范围时会缩小保持比例，截图仍归一化到1280×720；已实测修复1136×640窗口右侧不能点击的问题。
