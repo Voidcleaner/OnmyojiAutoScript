@@ -121,7 +121,7 @@ def run_existing(plan, config, device, *, build_revision='initial', xp_only=Fals
     if plan.module == 'AwakeningAdapter':
         from tasks.BeginnerQuest.awakening import AwakeningAdapter
         return AwakeningAdapter(config,device).run_to(plan.target,build_revision=build_revision)
-    allowed = {'Orochi','Exploration','ExplorationHardAdapter','ExperienceYoukai','Tako'}
+    allowed = {'Orochi','Exploration','ExplorationHardAdapter','ExperienceYoukai','GoldYoukai','Tako'}
     if plan.module not in allowed:
         raise ValueError('This plan requires a novice UI adapter')
     if plan.module == 'Orochi' and (plan.target is None or not 1 <= plan.target <= 13):

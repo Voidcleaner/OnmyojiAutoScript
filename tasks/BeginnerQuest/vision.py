@@ -120,7 +120,7 @@ def read_courtyard_story_gate(image):
     """Read the locked story marker only, excluding avatar/shikigami levels."""
     import re
     from module.ocr.models import get_ocr_model
-    crop=cv2.resize(image[315:395,320:455],None,fx=3,fy=3)
+    crop=cv2.resize(image[300:380,320:455],None,fx=5,fy=5)
     levels=[]
     for box in get_ocr_model().detect_and_ocr(crop):
         match=re.fullmatch(r'Lv[.:：·]?(\d{1,2})',box.ocr_text.replace(' ',''),re.I)
