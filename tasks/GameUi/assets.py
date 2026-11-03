@@ -237,4 +237,4 @@ class GameUiAssets:
 	I_CHECK_BEGINNER_BORROW = RuleImage(roi_front=(90,14,138,44), roi_back=(80,0,170,75), threshold=0.9, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_borrow.png")
 	I_CHECK_BEGINNER_JOURNEY = RuleImage(roi_front=(90,14,118,44), roi_back=(80,0,160,75), threshold=0.9, method="Template matching", file="./tasks/GameUi/page/page_check_beginner_journey.png")
 
-	I_CHECK_COURTYARD_FOOTER = RuleImage(roi_front=(970,610,200,80), roi_back=(950,590,250,120), threshold=0.88, method="Template matching", file="./tasks/GameUi/page/page_check_courtyard_footer.png")
+	I_CHECK_COURTYARD_FOOTER = RuleImage(roi_front=(970,656,200,39), roi_back=(950,640,250,70), threshold=0.88, method="Template matching", file="./tasks/GameUi/page/page_check_courtyard_footer.png")
