@@ -34,13 +34,15 @@ class GeneralRoom(BaseTask, GeneralRoomAssets):
                 logger.warning('Create room button do not take effect')
                 logger.warning('The most possible reason is that there are not challenge tickets')
                 return False
-            if self.appear_then_click(self.I_CREATE_ROOM, interval=2):
-                click_number += 1
-                continue
+            # The dimmed underlying button remains visible behind the dialog.
+            # Recognize the foreground confirmation before clicking it again.
             if self.appear(self.I_CREATE_ENSURE):
                 return True
             if self.appear(self.I_CREATE_ENSURE_2):
                 return True
+            if self.appear_then_click(self.I_CREATE_ROOM, interval=2):
+                click_number += 1
+                continue
 
     def ensure_private(self) -> bool:
         """

@@ -12,6 +12,13 @@ def box(text,x,y):
 
 
 class NoviceResourceTests(unittest.TestCase):
+    def test_create_room_prioritizes_foreground_confirmation(self):
+        from tasks.Component.GeneralRoom.general_room import GeneralRoom
+        t=SimpleNamespace(I_CREATE_ROOM='background',I_CREATE_ENSURE='dialog',I_CREATE_ENSURE_2='dialog2',
+                          appear=Mock(return_value=True),screenshot=Mock(),appear_then_click=Mock())
+        self.assertTrue(GeneralRoom.create_room(t))
+        t.appear_then_click.assert_not_called()
+
     def test_cost_only_uses_spending_label_region(self):
         self.assertEqual(preview_cost([box('14000',830,644),box('1330000',1160,47)]),14000)
         self.assertIsNone(preview_cost([box('14000',830,644),box('28000',850,644)]))
