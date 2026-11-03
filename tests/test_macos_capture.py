@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch,Mock
 import numpy as np
 from module.device.method.macos_capture import crop_client, capture_window, launch_window
 
@@ -41,6 +41,26 @@ class MacOSCaptureTests(unittest.TestCase):
         get.return_value.raise_for_status.side_effect = RuntimeError('403')
         with self.assertRaises(RuntimeError):
             capture_window('http://127.0.0.1:22271', 'secret', 'one', (100, 50), (100, 50))
+
+    @patch('module.device.method.macos_capture.time.sleep')
+    @patch('module.device.method.macos_capture.requests.get')
+    def test_temporary_capture_failure_retries_read_only(self,get,sleep):
+        import cv2
+        bad=Mock(status_code=503)
+        ok=Mock(status_code=200,content=cv2.imencode('.png',np.zeros((50,100,3),np.uint8))[1].tobytes())
+        get.side_effect=[bad,ok]
+        self.assertEqual(capture_window('http://127.0.0.1:22272','secret','one',(100,50),(100,50)).shape,(50,100,3))
+        self.assertEqual(get.call_count,2)
+        bad.raise_for_status.assert_not_called()
+
+    @patch('module.device.method.macos_capture.time.sleep')
+    @patch('module.device.method.macos_capture.requests.get')
+    def test_persistent_capture_failure_stops_after_three(self,get,sleep):
+        bad=Mock(status_code=503)
+        bad.raise_for_status.side_effect=RuntimeError('503')
+        get.return_value=bad
+        with self.assertRaises(RuntimeError):capture_window('http://127.0.0.1:22272','secret','one',(100,50),(100,50))
+        self.assertEqual(get.call_count,3)
 
     @patch('module.device.method.macos_capture.requests.post')
     def test_launch_sends_only_configured_title(self, post):

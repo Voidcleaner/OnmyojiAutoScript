@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 import cv2
 import numpy as np
 import requests
+import time
 
 
 def crop_client(image, client_size, target_size):
@@ -24,9 +25,14 @@ def capture_window(url, token, title, client_size, target_size):
     if (endpoint.scheme != 'http' or endpoint.hostname != '127.0.0.1'
             or endpoint.username or endpoint.password or not token or not title):
         raise ValueError('macOS capture requires a loopback URL, token and unique window title')
-    response = requests.get(url.rstrip('/') + '/capture', params={'title': title},
-                            headers={'Authorization': 'Bearer ' + token}, timeout=12)
-    response.raise_for_status()
+    for attempt in range(3):
+        response = requests.get(url.rstrip('/') + '/capture', params={'title': title},
+                                headers={'Authorization': 'Bearer ' + token}, timeout=12)
+        if response.status_code==503 and attempt<2:
+            time.sleep(.5)
+            continue
+        response.raise_for_status()
+        break
     image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR)
     return crop_client(image, client_size, target_size)
 
