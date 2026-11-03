@@ -113,6 +113,14 @@ class NoviceHub(GameUi):
         self._claim_visible()
         self._tap((1230,180))
         boxes=self._claim_visible()
+        # The task tab retains its old scroll offset across visits. Start at
+        # the top so unfinished rows above that offset are not silently lost.
+        for _ in range(2):
+            if getattr(self.device,'is_desktop',False):
+                self.device.swipe_desktop_window_message((990,300),(990,580),hold_time=.8)
+            else:self.device.swipe((990,300),(990,580),control_name='NOVICE_TASK_LIST_TOP')
+            time.sleep(.5)
+        boxes=self._read()
         observation=observe_tasks(boxes)
         # Reward transitions can swallow the first task-tab click. Never treat
         # a blank observation as an empty list of remaining objectives.
@@ -123,7 +131,7 @@ class NoviceHub(GameUi):
             observation=observe_tasks(boxes)
         if observation.stage is None or observation.progress is None or observation.handbook_level is None:
             raise RequestHumanTakeover('Novice task tab did not yield stage, progress and handbook level')
-        for _ in range(2):
+        for _ in range(3):
             self.device.swipe((990,580),(990,300),control_name='NOVICE_TASK_LIST')
             time.sleep(.8)
             extra=observe_tasks(self._read())

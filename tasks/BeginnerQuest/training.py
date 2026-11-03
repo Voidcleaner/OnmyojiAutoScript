@@ -44,11 +44,16 @@ class TrainingAdapter(SoulUpgradeAdapter):
         for index,(x,y) in enumerate(self.SLOT_CENTERS):
             if index<len(materials):
                 kind,level=materials[index]
-                if kind not in ('red','blue'):raise ValueError('Only experience daruma may be fed')
+                if kind not in ('red','blue','n_tubikabe'):raise ValueError('Only experience daruma or verified level-1 N Tubi may be fed')
+                if kind=='n_tubikabe' and level!=1:raise ValueError('Only level-1 N fodder is calibrated')
                 image=root/f'food_{kind}.png'
                 actual=self._number((x-48,y-50,x-12,y-18))
-                if actual is None and level in (1,13) and template_action(self.device.image,root/f'food_level_{level}.png','food_level',region=(x-50,y-55,x-5,y-15),threshold=.95):
-                    actual=level
+                if actual!=level and level in (1,13):
+                    candidates=[root/f'food_level_{level}.png']
+                    if level==1:candidates.append(root/'food_level_1_large.png')
+                    if kind=='n_tubikabe':candidates.append(root/'food_n_tubikabe_level_1.png')
+                    if kind=='blue':candidates.append(root/f'food_blue_level_{level}.png')
+                    if any(template_action(self.device.image,p,'food_level',region=(x-50,y-55,x-5,y-15),threshold=.9 if kind=='blue' else .95) for p in candidates):actual=level
                 if actual!=level or not template_action(self.device.image,image,'food',region=(x-46,y-45,x+46,y+45),threshold=.9):
                     raise RequestHumanTakeover(f'Training material {index+1} identity/level not verified: {actual}')
             elif not template_action(self.device.image,root/'food_plus.png','empty',region=(x-28,y-28,x+28,y+28),threshold=.9):

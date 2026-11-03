@@ -72,6 +72,15 @@ class NoviceResourceTests(unittest.TestCase):
         self.assertEqual(training_result([box('Lv.20',787,258),box('Lv.25',957,258)]),(20,25))
         self.assertIsNone(training_result([box('Lv.20',787,258)]))
 
+    def test_training_rejects_unapproved_or_raised_n_fodder(self):
+        from tasks.BeginnerQuest.training import TrainingAdapter
+        for material in [('ssr',1),('n_tubikabe',2)]:
+            task=object.__new__(TrainingAdapter)
+            task._read=Mock(return_value=[box('式神升级',187,43),box('Lv.1/20',720,553),box('Lv.13/20',925,553),box('6935',765,652)])
+            task._tap=Mock()
+            with self.assertRaises(ValueError):task.commit_preview((1,20),(13,20),[material],7000)
+            task._tap.assert_not_called()
+
     def test_training_spend_is_rejected_when_target_or_coin_changes(self):
         from tasks.BeginnerQuest.training import TrainingAdapter
         for target,coin in [('LV.24/25','1500'),('LV.25/25','2500')]:
