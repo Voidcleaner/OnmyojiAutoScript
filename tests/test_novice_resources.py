@@ -23,6 +23,14 @@ class NoviceResourceTests(unittest.TestCase):
         with self.assertRaises(RequestHumanTakeover):t.finish_preview()
         t._tap.assert_not_called()
 
+    def test_level7_preview_requires_level3_and_bounded_cost(self):
+        for current,cost in ((2,28000),(3,28001)):
+            t=object.__new__(SoulUpgradeAdapter)
+            t._read=Mock(return_value=[box('御魂强化',196,43),box('19500/3750',900,396),box(str(cost),830,644)])
+            t._number=Mock(side_effect=lambda roi:current if roi[0]==880 else 7);t._tap=Mock()
+            with self.assertRaises(RequestHumanTakeover):t.finish_preview(target=7,max_coin=28000)
+            t._tap.assert_not_called()
+
     def test_cosmetic_activation_only_cancels_explicit_prompt(self):
         task=SimpleNamespace(device=Mock())
         self.assertFalse(handle_cosmetic_activation(task,[box('是否购买',640,300),box('取消',525,438)]))

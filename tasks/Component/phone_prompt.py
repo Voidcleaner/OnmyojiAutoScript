@@ -1,6 +1,6 @@
 """Dismiss optional phone association through Go bind -> Cancel, never submit."""
 import time
-from tasks.BeginnerQuest.vision import choose_text
+from tasks.BeginnerQuest.vision import choose_text, Action
 
 
 class PhoneBindingFlow:
@@ -20,6 +20,19 @@ class PhoneBindingFlow:
             self.opened_at=None
             return cancel
         go=choose_text(boxes,('前往绑定','前往关联'),(200,180,1100,700),'open_phone_binding')
+        if go is None:
+            # The round button wraps 前往 / 绑定 onto two separate OCR lines.
+            starts=[b for b in boxes if b.score>=.75 and b.ocr_text.strip()=='前往'
+                    and 850<b.box[:,0].mean()<1100 and 350<b.box[:,1].mean()<620]
+            ends=[b for b in boxes if b.score>=.75 and b.ocr_text.strip() in ('绑定','关联')]
+            for first in starts:
+                x,y=first.box.mean(axis=0)
+                following=next((b for b in ends if abs(b.box[:,0].mean()-x)<45
+                                and 10<b.box[:,1].mean()-y<70),None)
+                if following is not None:
+                    ex,ey=following.box.mean(axis=0)
+                    go=Action('open_phone_binding',(int((x+ex)/2),int((y+ey)/2)),min(first.score,following.score))
+                    break
         if go:
             self.opened_at=now
             return go

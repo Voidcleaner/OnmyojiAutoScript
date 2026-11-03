@@ -311,3 +311,25 @@ class BeginnerQuestTests(unittest.TestCase):
 
 if __name__=='__main__':
     unittest.main()
+
+class WrappedPhoneButtonTests(unittest.TestCase):
+    def test_go_bind_button_can_wrap_onto_two_lines(self):
+        from tasks.Component.phone_prompt import PhoneBindingFlow
+        action=PhoneBindingFlow().decide([box('关联手机',655,172),box('前往',1012,477),box('绑定',1010,511)],now=1)
+        self.assertEqual(action.name,'open_phone_binding')
+        self.assertEqual(action.point,(1011,494))
+
+    def test_unrelated_separate_labels_do_not_form_a_button(self):
+        from tasks.Component.phone_prompt import PhoneBindingFlow
+        self.assertIsNone(PhoneBindingFlow().decide([box('关联手机',655,172),box('前往',1012,477),box('绑定',700,511)],now=1))
+
+class DialogueAdvanceTests(unittest.TestCase):
+    def test_named_story_dialogue_has_safe_body_advance(self):
+        from tasks.BeginnerQuest.vision import dialogue_advance_action
+        action=dialogue_advance_action([box('黑晴明',385,577),box('哼，你想起来了吗？晴明啊。',600,630)])
+        self.assertEqual(action.name,'continue_dialogue')
+        self.assertEqual(action.point,(640,650))
+
+    def test_arbitrary_bottom_hint_is_not_a_dialogue(self):
+        from tasks.BeginnerQuest.vision import dialogue_advance_action
+        self.assertIsNone(dialogue_advance_action([box('点击任意位置继续',640,670)]))

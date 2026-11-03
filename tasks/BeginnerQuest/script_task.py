@@ -8,7 +8,7 @@ import cv2
 from module.exception import RequestHumanTakeover, TaskEnd
 from module.logger import logger
 from module.ocr.models import get_ocr_model
-from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action, Action, prepare_is_enabled
+from tasks.BeginnerQuest.vision import template_action, choose_text, ellipsis_action, movie_skip_action, Action, prepare_is_enabled, dialogue_advance_action
 
 from tasks.BeginnerQuest.search import SceneSearch, click_point
 from tasks.Component.phone_prompt import PhoneBindingFlow
@@ -258,6 +258,12 @@ class ScriptTask:
             self.device.click_record_remove('BeginnerQuest_search')
             key = (action.name, action.point[0] // 15, action.point[1] // 15)
             repeats = repeats + 1 if key == last_key else 0
+            if repeats>=2 and action.name=='skip' and self.templates(image,{'search_scene'}):
+                fallback=dialogue_advance_action(get_ocr_model().detect_and_ocr(image))
+                if fallback:
+                    action=fallback
+                    key=(action.name,action.point[0]//15,action.point[1]//15)
+                    repeats=0
             if repeats >= 4:
                 cv2.imwrite(str(diagnostic / 'unrecognized.png'), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
                 raise RequestHumanTakeover('BeginnerQuest: repeated interaction without progress')

@@ -144,3 +144,13 @@ def exploration_click_point(point):
 def pink_close_action(image):
     return template_action(image,Path('tasks/GlobalGame/ui/ui_close_celebration.png'),
                            'close_foreground_modal',.9,(600,20,1280,220))
+
+
+def dialogue_advance_action(boxes):
+    """Advance a positively identified speaker/text panel when Skip is inert."""
+    speakers=[b for b in boxes if b.score>=.75 and 280<b.box[:,0].mean()<700
+              and 540<b.box[:,1].mean()<605 and 1<=len(b.ocr_text.strip())<=10]
+    lines=[b for b in boxes if b.score>=.75 and 280<b.box[:,0].mean()<1100
+           and 605<b.box[:,1].mean()<705 and len(b.ocr_text.strip())>=4]
+    if not speakers or not lines:return None
+    return Action('continue_dialogue',(640,650),min(speakers[0].score,lines[0].score))
