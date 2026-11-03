@@ -40,6 +40,14 @@ class BeginnerQuestTests(unittest.TestCase):
         self.assertEqual(action.name, 'cancel_optional_download')
         self.assertEqual(action.point, (480,470))
 
+    def test_glowing_npc_circle_with_five_lit_sectors(self):
+        from pathlib import Path
+        crop=cv2.cvtColor(cv2.imread(str(Path(__file__).parent/'fixtures/beginner/npc_glowing_circle.png')),cv2.COLOR_BGR2RGB)
+        self.image[314:394,1195:1275]=crop
+        action=ellipsis_action(self.image)
+        self.assertIsNotNone(action)
+        self.assertEqual(action.point,(1235,354))
+
     def test_three_dots_need_circle(self):
         for x in (388,400,412):
             cv2.circle(self.image,(x,250),4,(240,240,240),-1)

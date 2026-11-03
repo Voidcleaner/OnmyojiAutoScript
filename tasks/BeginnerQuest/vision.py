@@ -78,7 +78,8 @@ def ellipsis_action(rgb, excluded_regions=()):
         sectors=[ring & (angles>=a) & (angles<a+np.pi/4)
                  for a in np.arange(-np.pi,np.pi,np.pi/4)]
         coverage=sum(float(np.mean(patch[sector]>145))>=.15 for sector in sectors)
-        if coverage>=6 and float(np.mean(patch[ring] > 145)) >= .20 and patch[30, 30] > 160:
+        ring_light=float(np.mean(patch[ring] > 145))
+        if (coverage>=6 and ring_light>=.20 or coverage>=5 and ring_light>=.35) and patch[30,30]>160:
             return Action('talk', (cx, cy), .9)
     return None
 
