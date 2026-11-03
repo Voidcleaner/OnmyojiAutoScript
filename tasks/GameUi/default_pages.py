@@ -60,8 +60,22 @@ def handle_login_page(task) -> bool:
 page_login = Page(SwitchAccountAssets.I_CHECK_LOGIN_FORM, category="global")
 page_login.add_enter_success_hooks(handle_login_page)
 
+def modern_courtyard(task):
+    """Verify modern courtyard even when footer animation changes its pixels."""
+    if not task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN):
+        return False
+    if task.appear(GameUiAssets.I_CHECK_COURTYARD_FOOTER):
+        return True
+    from module.ocr.models import get_ocr_model
+    from tasks.BeginnerQuest.planner import read_player_level
+    labels={'组队','阴阳寮','商店','式神录','阴阳术','纳物库','图鉴','珍旅居','好友'}
+    observed={b.ocr_text.replace(' ','') for b in get_ocr_model().detect_and_ocr(task.device.image)
+              if b.score>=.75 and b.box[:,1].mean()>635}
+    return len(labels & observed)>=3 and read_player_level(task.device.image) is not None
+
+
 # 庭院主页(此处通过提高阈值来处理部分探索章节会识别成原始庭院的问题, 后续有其他更好方法需改善)
-page_main = Page(any_of(GameUiAssets.I_CHECK_MAIN, all_of(GameUiAssets.I_CHECK_BEGINNER_MAIN, GameUiAssets.I_CHECK_BEGINNER_GUIDANCE), all_of(GameUiAssets.I_CHECK_BEGINNER_MAIN, GameUiAssets.I_CHECK_COURTYARD_FOOTER)), category="global")
+page_main = Page(any_of(GameUiAssets.I_CHECK_MAIN, all_of(GameUiAssets.I_CHECK_BEGINNER_MAIN, GameUiAssets.I_CHECK_BEGINNER_GUIDANCE), modern_courtyard), category="global")
 page_main.add_enter_success_hooks(
     GlobalGameAssets.I_UI_CLOSE_CELEBRATION,
     handle_phone_prompt,
@@ -78,7 +92,7 @@ page_shikigami_records.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key
 def enter_shikigami_records(task):
     if task.appear_then_click(GameUiAssets.I_MAIN_GOTO_SHIKIGAMI_RECORDS):
         return True
-    if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and (task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE) or task.appear(GameUiAssets.I_CHECK_COURTYARD_FOOTER)):
+    if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and (task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE) or modern_courtyard(task)):
         from module.ocr.models import get_ocr_model
         from tasks.BeginnerQuest.vision import choose_text
         action=choose_text(get_ocr_model().detect_and_ocr(task.device.image),('式神',),(1000,590,1250,710),'OPEN_SHIKIGAMI')
@@ -240,7 +254,7 @@ page_exploration = Page(any_of(GameUiAssets.I_CHECK_EXPLORATION, GameUiAssets.I_
 page_exploration.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_exploration->page_main")
 page_exploration.add_enter_failure_hooks(ExplorationAssets.I_E_OPEN_FOLDER)
 def enter_exploration(task):
-    if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and (task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE) or task.appear(GameUiAssets.I_CHECK_COURTYARD_FOOTER)):
+    if task.appear(GameUiAssets.I_CHECK_BEGINNER_MAIN) and (task.appear(GameUiAssets.I_CHECK_BEGINNER_GUIDANCE) or modern_courtyard(task)):
         # The paper's lower edge/shadow can match without accepting clicks.
         # Use its verified upper interior before trying broad legacy templates.
         task.device.click(741,244,control_check=False,control_name='BEGINNER_EXPLORE')

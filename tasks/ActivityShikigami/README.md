@@ -45,3 +45,16 @@
 
 ![image-20251220111505769](https://runhey-img-stg1.oss-cn-chengdu.aliyuncs.com/img3/202512201115927.png)
 
+
+## 飞羽凌云（2026-10-28 至 2026-11-10）
+
+本期赛事训练使用独立适配器，不使用旧爬塔入口：
+
+```python
+from tasks.ActivityShikigami.feiyu import FeiyuTraining
+result = FeiyuTraining(config, device).run_boosted()
+```
+
+从已经打开的“赛事训练”页面运行，核对30体力挑战及每日掉落提升计数，最多完成前5次。复用通用战斗准备/结算，首败停止，结束必须重新读到计数增长。只消耗现有体力，不购买资源。记录保存在 `log/feiyu/配置名/training.json`。围场赛事探索不属于这个训练适配器的完成范围。
+
+`run_map_duels()` 从已打开的围场地图处理可识别的赛车对决：等待地图镜头稳定，验证“×6”体力费用，复用通用战斗并核验探索进度增长。主线分站赛或其他未知事件返回 `story_node_required`，不将沿途战斗完成当作整个活动完成。实测本账号12/28→15/28；分站赛后续仍待适配验证。

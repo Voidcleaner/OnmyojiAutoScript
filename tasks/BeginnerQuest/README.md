@@ -91,3 +91,7 @@ result = run_level_gate(config, device, chapter=17, target=35)
 ```
 
 只在实际等级达到目标后启动有时限的庭院剧情；体力不足直接返回，不购买资源。剧情结束返回重新规划或续战状态，不将中间等级或剧情批次当作40级完成。异常继续沿用原脚本的停止与现场记录机制。
+
+持续推进已登录账号可以运行 `continuous.ContinuousProgression(config, device).run(chapter=15, target=40)`。每升一级重新推进一次有时限的剧情，再按最多3批探索核验等级和经验；目标等级、低体力、战败、未知画面或总时间限制都会结束运行。默认总时间4小时，保留200体力，不购买资源。当前章节必须由实际解锁情况选择，不能用示例章节代替核验。状态保存在配置独立的 `continuous.json`。
+
+macOS 可使用 `deploy/macos/progression_supervisor.py` 等待解锁后启动单个持续任务，参数包括 `--account`、`--chapter`、`--target`、`--wine`、`--python`；默认最多等待8小时，状态写入账号独立的 `supervisor.json`。锁屏时不输入，也不尝试解锁系统。`--use-current-team` 仅用于现有阵容已经实战获胜的账号；默认保留原队伍核验。异常退出不会无限重启消耗资源。
