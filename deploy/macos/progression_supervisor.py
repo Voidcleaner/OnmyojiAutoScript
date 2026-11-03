@@ -1,6 +1,7 @@
 """Wait through a locked macOS session, then launch one OAS progression worker."""
 import argparse
 import json
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -51,7 +52,8 @@ def main():
              str(args.python),'-u','-c',source]
     state('running')
     with (root/'continuous-worker.log').open('a',encoding='utf-8') as output:
-        result=subprocess.run(command,cwd=repo,stdout=output,stderr=subprocess.STDOUT)
+        env=dict(os.environ,PYTHONIOENCODING='utf-8',PYTHONUTF8='1')
+        result=subprocess.run(command,cwd=repo,env=env,stdout=output,stderr=subprocess.STDOUT)
     state('worker_finished',exit_code=result.returncode)
 
 

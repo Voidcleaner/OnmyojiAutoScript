@@ -95,3 +95,11 @@ result = run_level_gate(config, device, chapter=17, target=35)
 持续推进已登录账号可以运行 `continuous.ContinuousProgression(config, device).run(chapter=15, target=40)`。每升一级重新推进一次有时限的剧情，再按最多3批探索核验等级和经验；目标等级、低体力、战败、未知画面或总时间限制都会结束运行。默认总时间4小时，保留200体力，不购买资源。当前章节必须由实际解锁情况选择，不能用示例章节代替核验。状态保存在配置独立的 `continuous.json`。
 
 macOS 可使用 `deploy/macos/progression_supervisor.py` 等待解锁后启动单个持续任务，参数包括 `--account`、`--chapter`、`--target`、`--wine`、`--python`；默认最多等待8小时，状态写入账号独立的 `supervisor.json`。锁屏时不输入，也不尝试解锁系统。`--use-current-team` 仅用于现有阵容已经实战获胜的账号；默认保留原队伍核验。异常退出不会无限重启消耗资源。
+
+## 师徒守护历练（初步适配）
+
+`mentorship.MentorshipRunner` 协调两个已经登录的独立配置。请先在师父的“前辈之守护”页面选中正确后辈；程序校验双方姓名、读取每日守护历练次数，复用现有邀请按钮、通用战斗和组队等待机制。两人到齐并稳定3—5秒才允许挑战，单次最多5场，失败或未知界面立即停止。不会处理赠送御魂/式神、聊天、协同对弈或传承仪式。
+
+可在 OAS 的 Windows Python 环境从项目根目录运行 `dev_tools/run_mentorship.py --teacher-profile 配置名 --pupil-profile 配置名 --teacher-name 师父角色名 --pupil-name 徒弟角色名`。状态保存在后辈配置的 `mentorship.json`。当前已实测识别既有师徒关系、5/5每日次数及进入守护房间；邀请接受、双方结算与连续5场仍待完整实战联调，不能把启动脚本当作任务已经完成。
+
+已增加闲庭模式的正向图标识别及退出钩子，避免庭院隐藏HUD时导航失败。CrossOver 客户区超过 Wine 鼠标坐标范围时会缩小保持比例，截图仍归一化到1280×720；已实测修复1136×640窗口右侧不能点击的问题。

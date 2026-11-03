@@ -54,3 +54,45 @@ class FeiyuTests(unittest.TestCase):
         with patch('tasks.BeginnerQuest.continuous.time.monotonic',side_effect=[0,61]):
             self.assertEqual(task.run(15,max_seconds=60)['status'],'time_limit')
         task.goto_page.assert_not_called()
+
+    def test_map_without_battles_is_not_complete_before_total(self):
+        from unittest.mock import Mock
+        from tasks.ActivityShikigami.feiyu import FeiyuTraining
+        task=object.__new__(FeiyuTraining)
+        task._settled_map_boxes=Mock(return_value=[box('探索进度27/28',100,124)])
+        task._tap=Mock()
+        self.assertEqual(task.run_map_duels()['status'],'story_node_required')
+        task._tap.assert_not_called()
+
+    def test_map_complete_requires_verified_total(self):
+        from unittest.mock import Mock
+        from tasks.ActivityShikigami.feiyu import FeiyuTraining
+        task=object.__new__(FeiyuTraining)
+        task._settled_map_boxes=Mock(return_value=[box('探索进度28/28',100,124)])
+        task._tap=Mock()
+        self.assertEqual(task.run_map_duels()['status'],'map_complete')
+        task._tap.assert_not_called()
+
+    def test_map_arrow_is_required_to_be_unambiguous(self):
+        import cv2
+        from tasks.ActivityShikigami.feiyu import next_map_arrow
+        image=np.zeros((720,1280,3),dtype=np.uint8)
+        arrow=np.array([[610,180],[620,180],[620,200],[630,200],[615,220],[600,200],[610,200]])
+        cv2.fillPoly(image,[arrow],(255,220,0))
+        self.assertIsNotNone(next_map_arrow(image))
+        cv2.fillPoly(image,[arrow+np.array([200,0])],(255,220,0))
+        self.assertIsNone(next_map_arrow(image))
+
+    def test_reward_tabs_are_not_mistaken_for_a_popup(self):
+        from unittest.mock import Mock
+        from tasks.ActivityShikigami.feiyu import FeiyuTraining
+        task=object.__new__(FeiyuTraining);task._dismiss=Mock()
+        self.assertFalse(task._event_cosmetic_popup([box('成就',1193,346),box('头像框',800,250)]))
+        task._dismiss.assert_not_called()
+
+    def test_gained_unit_overlay_takes_priority_over_underlying_reward_tabs(self):
+        from unittest.mock import Mock
+        from tasks.ActivityShikigami.feiyu import FeiyuTraining
+        task=object.__new__(FeiyuTraining);task._dismiss=Mock(return_value=True)
+        self.assertTrue(task._event_cosmetic_popup([box('获得',358,123),box('成就',1193,346)]))
+        task._dismiss.assert_called_once()

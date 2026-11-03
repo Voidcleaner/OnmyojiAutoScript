@@ -76,6 +76,8 @@ def modern_courtyard(task):
 
 # 庭院主页(此处通过提高阈值来处理部分探索章节会识别成原始庭院的问题, 后续有其他更好方法需改善)
 page_main = Page(any_of(GameUiAssets.I_CHECK_MAIN, all_of(GameUiAssets.I_CHECK_BEGINNER_MAIN, GameUiAssets.I_CHECK_BEGINNER_GUIDANCE), modern_courtyard), category="global")
+from tasks.Component.idle_courtyard import handle_idle_courtyard
+page_main.add_enter_failure_hooks(handle_idle_courtyard)
 page_main.add_enter_success_hooks(
     GlobalGameAssets.I_UI_CLOSE_CELEBRATION,
     handle_phone_prompt,

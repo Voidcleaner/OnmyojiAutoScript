@@ -31,7 +31,7 @@ from ctypes import c_long, byref, POINTER, Structure, wintypes
 from contextlib import contextmanager
 from pathlib import Path
 
-from win32api import SendMessage
+from win32api import SendMessage, GetSystemMetrics
 from win32process import GetWindowThreadProcessId
 from win32gui import (GetWindowText, EnumWindows, GetWindowRect, IsWindow,
                       GetClientRect, ClientToScreen, GetWindowLong,
@@ -860,6 +860,15 @@ def _desktop_best_window(pid, fallback: int = 0, titles=None) -> int:
         return fallback
 
 
+def desktop_fit_client_size(client, screen):
+    """Keep a CrossOver viewport within Wine's mouse-coordinate extent."""
+    width,height=client;screen_w,screen_h=screen
+    if min(width,height)<=0 or screen_w<=2 or screen_h<=60:return None
+    if width<=screen_w and height<=screen_h:return None
+    scale=min((screen_w-2)/width,(screen_h-60)/height,1)
+    return (max(1,round(width*scale)),max(1,round(height*scale)))
+
+
 class DesktopWindow:
     def desktop_pid(self):
         """返回当前桌面客户端 PID（int）；取不到返回 None。
@@ -1084,8 +1093,23 @@ class DesktopWindow:
             # 摆位只挂在「尺寸不对」的分支上会被尺寸已正确的窗口整份跳过
             self._desktop_assert_window_pos(hwnd)
             if self.config.script.device.screenshot_method == 'macos_window':
-                # Native capture already normalizes the client to screenshot_size;
-                # retain CrossOver's valid viewport instead of fighting its size cap.
+                # Native capture normalizes screenshots, but cannot extend Wine's
+                # mouse-coordinate space. An oversized native window has an
+                # unclickable right edge even for manual mouse input.
+                fit=desktop_fit_client_size((client_w,client_h),
+                                            (GetSystemMetrics(0),GetSystemMetrics(1)))
+                if fit is not None:
+                    left,top,right,bottom=GetWindowRect(hwnd)
+                    total_w=right-left-client_w+fit[0]
+                    total_h=bottom-top-client_h+fit[1]
+                    try:
+                        SetWindowPos(hwnd,0,0,0,total_w,total_h,
+                                     SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE)
+                    except Exception as exc:
+                        logger.warning(f'CrossOver viewport resize failed: {exc}')
+                        return False if IsWindow(hwnd) else None
+                    logger.info(f'CrossOver: constrain oversized client {client_w}x{client_h} to {fit[0]}x{fit[1]}')
+                    return True
                 logger.info('CrossOver: keep native client size; normalize window capture')
                 return False
             if client_w == width and client_h == height:
